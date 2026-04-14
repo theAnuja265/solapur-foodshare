@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Food - Solapur Food Share</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #0a0a0a; position: relative; min-height: 100vh; }
+
+        .page-bg-container { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; overflow:hidden; }
+        .page-bg { position:absolute; top:0; left:0; width:100%; height:100%; background-size:cover; background-position:center; opacity:0; transition:opacity 2s ease-in-out; filter:blur(3px) brightness(0.6); }
+        .page-bg.active { opacity:1; }
+        .page-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
+
+        .hero { height:320px; display:flex; align-items:center; justify-content:center; text-align:center; color:white; }
+        .hero-content { z-index:1; }
+        .hero h1 { font-size:3rem; font-weight:900; margin-bottom:12px; background:linear-gradient(135deg,#fff 0%,#d8b4fe 50%,#86efac 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-shadow:none; }
+        .hero p { font-size:1.1rem; color:rgba(255,255,255,0.75); margin-bottom:6px; }
+
+        .search-section {
+            max-width:700px; margin:-40px auto 36px;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding:32px 36px; border-radius:20px;
+            box-shadow:0 16px 40px rgba(0,0,0,0.4);
+            position:relative; z-index:10;
+        }
+        .search-section h2 { color:#d8b4fe; font-size:1.3rem; margin-bottom:20px; text-align:center; font-weight:700; }
+        .search-box { display:flex; gap:12px; align-items:center; }
+        .search-box select {
+            flex:1; padding:13px 16px;
+            background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2);
+            border-radius:12px; font-size:1rem; color:#fff; cursor:pointer;
+            font-family:'Poppins',sans-serif;
+        }
+        .search-box select option { background:#1e1e2e; color:#fff; }
+        .search-box button {
+            padding:13px 36px; background:linear-gradient(135deg,#4ade80,#16a34a);
+            color:white; border:none; border-radius:12px; font-size:1rem; font-weight:700;
+            cursor:pointer; transition:all 0.3s; font-family:'Poppins',sans-serif;
+        }
+        .search-box button:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(74,222,128,0.4); }
+
+        .results { display:none; max-width:1200px; margin:0 auto; padding:0 20px 40px; }
+        .results-header {
+            background:rgba(255,255,255,0.07); backdrop-filter:blur(16px);
+            border:1px solid rgba(255,255,255,0.12);
+            padding:22px 28px; border-radius:16px; margin-bottom:24px; text-align:center;
+        }
+        .results-header h3 { color:#86efac; font-size:1.6rem; margin-bottom:8px; font-weight:700; }
+        .results-header p { color:rgba(255,255,255,0.6); font-size:1rem; }
+
+        .food-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:22px; }
+        .food-card {
+            background:rgba(255,255,255,0.08); backdrop-filter:blur(14px);
+            border:1px solid rgba(255,255,255,0.12); border-radius:18px; padding:24px;
+            box-shadow:0 8px 30px rgba(0,0,0,0.3); border-left:4px solid rgba(134,239,172,0.5);
+            transition:all 0.3s; color:#f0f0f0;
+        }
+        .food-card:hover { transform:translateY(-6px); background:rgba(255,255,255,0.13); border-left-color:#86efac; box-shadow:0 16px 40px rgba(0,0,0,0.4); }
+        .food-card h4 { color:#86efac; font-size:1.2rem; margin-bottom:14px; font-weight:700; display:flex; align-items:center; gap:10px; }
+        .food-badge { display:inline-block; padding:4px 12px; background:rgba(74,222,128,0.2); border:1px solid rgba(74,222,128,0.4); color:#4ade80; border-radius:20px; font-size:0.72rem; font-weight:700; text-transform:uppercase; }
+        .food-info { margin:10px 0; color:rgba(255,255,255,0.75); display:flex; align-items:flex-start; gap:10px; font-size:0.92rem; }
+        .food-info strong { color:#fff; min-width:90px; font-weight:600; }
+
+        .claim-btn {
+            width:100%; margin-top:18px; padding:13px;
+            background:rgba(74,222,128,0.15); border:1px solid rgba(74,222,128,0.4);
+            color:#4ade80; border-radius:12px; font-size:1rem; font-weight:700;
+            cursor:pointer; transition:all 0.3s; font-family:'Poppins',sans-serif;
+        }
+        .claim-btn:hover { background:rgba(74,222,128,0.28); transform:translateY(-2px); }
+
+        .loading {
+            text-align:center; padding:60px;
+            background:rgba(255,255,255,0.07); backdrop-filter:blur(14px);
+            border:1px solid rgba(255,255,255,0.1); border-radius:16px; color:rgba(255,255,255,0.6);
+        }
+        .spinner { border:4px solid rgba(255,255,255,0.1); border-top:4px solid #4ade80; border-radius:50%; width:50px; height:50px; animation:spin 1s linear infinite; margin:20px auto; }
+        @keyframes spin { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+
+        .message-box {
+            background:rgba(255,255,255,0.07); backdrop-filter:blur(14px);
+            border:1px solid rgba(255,255,255,0.1); border-radius:16px;
+            padding:50px; text-align:center; color:rgba(255,255,255,0.6);
+        }
+        .message-box h3 { font-size:1.6rem; margin-bottom:12px; color:#fff; }
+        .message-box p { font-size:1rem; line-height:1.6; }
+
+        .expiry-timer { border-radius:12px; padding:12px 18px; font-weight:700; font-size:0.92rem; text-align:center; margin:14px 0; }
+        .expiry-timer.urgent  { background:rgba(244,67,54,0.15); border:1px solid rgba(244,67,54,0.3); color:#ef9a9a; }
+        .expiry-timer.warning { background:rgba(255,193,7,0.15); border:1px solid rgba(255,193,7,0.3); color:#ffd54f; }
+        .expiry-timer.expired { background:rgba(150,150,150,0.15); border:1px solid rgba(150,150,150,0.3); color:#aaa; }
+        .expiry-timer:not(.urgent):not(.warning):not(.expired) { background:rgba(74,222,128,0.15); border:1px solid rgba(74,222,128,0.3); color:#4ade80; }
+        .timer-display { font-size:1.05rem; font-weight:800; letter-spacing:1px; }
+        .timer-label { font-size:0.78rem; opacity:0.85; margin-bottom:4px; text-transform:uppercase; letter-spacing:1px; }
+
+        @media(max-width:768px) {
+            .hero h1 { font-size:2rem; }
+            .search-box { flex-direction:column; }
+            .search-box select, .search-box button { width:100%; }
+            .food-grid { grid-template-columns:1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Images -->
+    <div class="page-bg-container">
+        <div class="page-bg active" style="background-image: url('https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1920');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1593113646773-028c64a8f1b8?w=1920');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1509099863731-ef4bff19e808?w=1920');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=1920');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=1920');"></div>
+        <div class="page-overlay"></div>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="hero">
+        <div class="hero-content">
+            <h1>🔍 Find Food Near You</h1>
+            <p>Discover available food donations in your area</p>
+            <p>Help reduce food waste and feed those in need</p>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="search-section">
+        <h2>🎯 Search by Location</h2>
+        <div class="search-box">
+            <select id="taluka">
+                <option value="">📍 Select Taluka...</option>
+                <option value="Solapur City">Solapur City</option>
+                <option value="North Solapur">North Solapur</option>
+                <option value="South Solapur">South Solapur</option>
+                <option value="Barshi">Barshi</option>
+                <option value="Pandharpur">Pandharpur</option>
+                <option value="Akkalkot">Akkalkot</option>
+                <option value="Karmala">Karmala</option>
+                <option value="Madha">Madha</option>
+                <option value="Malshiras">Malshiras</option>
+                <option value="Mangalvedhe">Mangalvedhe</option>
+                <option value="Mohol">Mohol</option>
+                <option value="Sangola">Sangola</option>
+            </select>
+            <button onclick="searchFood()">🔍 Search</button>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="results" id="results">
+        <div class="results-header">
+            <h3 id="resultsTitle">Available Food</h3>
+            <p id="resultsSubtitle"></p>
+        </div>
+        <div class="food-grid" id="foodGrid"></div>
+    </div>
+
+    <script>
+        async function searchFood() {
+            const taluka = document.getElementById('taluka').value;
+            const results = document.getElementById('results');
+            const foodGrid = document.getElementById('foodGrid');
+            const resultsTitle = document.getElementById('resultsTitle');
+            const resultsSubtitle = document.getElementById('resultsSubtitle');
+            
+            if (!taluka) {
+                foodGrid.innerHTML = '<div class="message-box error"><h3>❌ Please Select a Taluka</h3><p>Choose your location from the dropdown to find available food donations.</p></div>';
+                results.style.display = 'block';
+                return;
+            }
+            
+            // Show loading
+            results.style.display = 'block';
+            foodGrid.innerHTML = '<div class="loading"><div class="spinner"></div><p style="color: #666; margin-top: 15px; font-size: 1.1rem;">Searching for food donations...</p></div>';
+            
+            try {
+                const response = await fetch(`/api/food/available-in-area?taluka=${encodeURIComponent(taluka)}`);
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    foodGrid.innerHTML = `<div class="message-box error"><h3>❌ Error</h3><p>${data.message || 'Unknown error occurred'}</p></div>`;
+                    return;
+                }
+                
+                if (data.foods && data.foods.length > 0) {
+                    resultsTitle.textContent = `✅ Found ${data.foods.length} Food Donation${data.foods.length > 1 ? 's' : ''}`;
+                    resultsSubtitle.textContent = `Available in ${taluka}`;
+                    
+                    const ngoEmail = localStorage.getItem('userEmail') || '';
+
+                    let html = '';
+                    data.foods.forEach((food, index) => {
+                        const isClaimed   = food.status === 'claimed';
+                        const isPickedUp  = food.status === 'picked_up';
+                        const isMysClaim  = isClaimed && food.claimer && food.claimer.email === ngoEmail;
+
+                        // Status badge
+                        let statusBadge = '';
+                        if (isPickedUp) {
+                            statusBadge = `<span style="background:#d1ecf1;color:#0c5460;padding:3px 12px;border-radius:12px;font-size:0.75rem;font-weight:700;margin-left:8px;">✅ PICKED UP</span>`;
+                        } else if (isClaimed) {
+                            statusBadge = `<span style="background:#fff3cd;color:#856404;padding:3px 12px;border-radius:12px;font-size:0.75rem;font-weight:700;margin-left:8px;">🚗 CLAIMED</span>`;
+                        } else {
+                            statusBadge = `<span style="background:#d4edda;color:#155724;padding:3px 12px;border-radius:12px;font-size:0.75rem;font-weight:700;margin-left:8px;">🟢 AVAILABLE</span>`;
+                        }
+
+                        // Claim button
+                        let claimBtn = '';
+                        if (isPickedUp) {
+                            claimBtn = `<button class="claim-btn" disabled style="background:#6c757d;cursor:not-allowed;">✅ Picked Up</button>`;
+                        } else if (isMysClaim) {
+                            claimBtn = `<button class="claim-btn" disabled style="background:#1565C0;cursor:not-allowed;">🚗 You Claimed This</button>`;
+                        } else if (isClaimed) {
+                            claimBtn = `<button class="claim-btn" disabled style="background:#856404;cursor:not-allowed;">🔒 Already Claimed</button>`;
+                        } else {
+                            claimBtn = `<button class="claim-btn" id="claim-btn-${food.id}" onclick="claimFood(${food.id})">✅ Claim This Food</button>`;
+                        }
+
+                        // Pickup code (only for NGO who claimed)
+                        const pickupCodeHtml = isMysClaim && food.pickup_code
+                            ? `<div style="background:#e3f2fd;border:2px solid #1565C0;border-radius:8px;padding:10px;margin:8px 0;text-align:center;">
+                                <div style="font-size:0.78rem;color:#1565C0;font-weight:700;">🔑 YOUR PICKUP CODE</div>
+                                <div style="font-size:1.6rem;font-weight:900;color:#1565C0;letter-spacing:4px;">${food.pickup_code}</div>
+                                <div style="font-size:0.72rem;color:#555;">Show this to the donor</div>
+                               </div>`
+                            : '';
+
+                        html += `
+                            <div class="food-card" id="food-card-${food.id}" style="${isClaimed || isPickedUp ? 'opacity:0.85;' : ''}">
+                                <h4>
+                                    ${food.title}
+                                    <span class="food-badge">${food.food_type}</span>
+                                    ${statusBadge}
+                                </h4>
+                                <div class="food-info"><strong>📦 Quantity:</strong><span>${food.quantity}</span></div>
+                                <div class="food-info"><strong>📍 Location:</strong><span>${food.area || food.taluka}</span></div>
+                                <div class="food-info"><strong>🏠 Pickup:</strong><span>${food.pickup_address}</span></div>
+                                <div class="food-info"><strong>👤 Contact:</strong><span>${food.contact_person_name}</span></div>
+                                <div class="food-info"><strong>📞 Phone:</strong><span>${food.contact_person_phone}</span></div>
+                                <div class="expiry-timer" id="timer-${food.id}">
+                                    <div class="timer-label">⏰ Food expires in:</div>
+                                    <div class="timer-display" id="countdown-${food.id}">Loading...</div>
+                                </div>
+                                <div class="food-info"><strong>⏰ Expires:</strong><span>${new Date(food.expiry_time).toLocaleString()}</span></div>
+                                ${pickupCodeHtml}
+                                ${claimBtn}
+                            </div>
+                        `;
+                    });
+                    
+                    foodGrid.innerHTML = html;
+                    
+                    // Start countdown timers for all food items
+                    data.foods.forEach(food => {
+                        startCountdown(food.id, food.expiry_time);
+                    });
+                } else {
+                    resultsTitle.textContent = '😔 No Food Available';
+                    resultsSubtitle.textContent = `in ${taluka}`;
+                    foodGrid.innerHTML = `
+                        <div class="message-box empty">
+                            <h3>😔 No Food Donations Available</h3>
+                            <p>There are currently no food donations available in ${taluka}.</p>
+                            <p>Try searching in a different taluka or check back later!</p>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                foodGrid.innerHTML = `
+                    <div class="message-box error">
+                        <h3>❌ Network Error</h3>
+                        <p>${error.message}</p>
+                        <p>Please check your internet connection and try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function claimFood(foodId) {
+            // Show NGO info modal instead of directly claiming
+            document.getElementById('claimFoodId').value = foodId;
+            document.getElementById('ngoClaimModal').style.display = 'flex';
+            // Pre-fill from localStorage if available
+            const saved = JSON.parse(localStorage.getItem('ngoClaimInfo') || '{}');
+            if (saved.ngoName)    document.getElementById('claimNgoName').value    = saved.ngoName;
+            if (saved.ngoContact) document.getElementById('claimNgoContact').value = saved.ngoContact;
+            if (saved.ngoTaluka)  document.getElementById('claimNgoTaluka').value  = saved.ngoTaluka;
+            if (saved.ngoArea)    document.getElementById('claimNgoArea').value    = saved.ngoArea;
+        }
+
+        async function submitClaim() {
+            const foodId     = document.getElementById('claimFoodId').value;
+            const ngoName    = document.getElementById('claimNgoName').value.trim();
+            const ngoContact = document.getElementById('claimNgoContact').value.trim();
+            const ngoTaluka  = document.getElementById('claimNgoTaluka').value.trim();
+            const ngoArea    = document.getElementById('claimNgoArea').value.trim();
+            const userEmail  = localStorage.getItem('userEmail') || '';
+
+            if (!ngoName || !ngoContact || !ngoTaluka || !ngoArea) {
+                document.getElementById('claimFormErr').style.display = 'block';
+                return;
+            }
+            document.getElementById('claimFormErr').style.display = 'none';
+
+            // Save for next time
+            localStorage.setItem('ngoClaimInfo', JSON.stringify({ ngoName, ngoContact, ngoTaluka, ngoArea }));
+
+            const submitBtn = document.getElementById('claimSubmitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ Claiming...';
+
+            try {
+                const res = await fetch('/api/food/claim-test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        food_id: parseInt(foodId),
+                        ngo_email: userEmail,
+                        ngo_name: ngoName,
+                        ngo_contact: ngoContact,
+                        ngo_taluka: ngoTaluka,
+                        ngo_area: ngoArea
+                    })
+                });
+
+                const data = await res.json();
+                closeClaimModal();
+
+                if (res.ok) {
+                    const pickupCode = data.food?.pickup_code || '';
+                    const card = document.getElementById(`food-card-${foodId}`);
+                    if (card) {
+                        const oldBadge = card.querySelector('span[style*="AVAILABLE"]');
+                        if (oldBadge) oldBadge.outerHTML = `<span style="background:#fff3cd;color:#856404;padding:3px 12px;border-radius:12px;font-size:0.75rem;font-weight:700;margin-left:8px;">🚗 CLAIMED</span>`;
+                        const claimBtn = document.getElementById(`claim-btn-${foodId}`);
+                        if (claimBtn) claimBtn.outerHTML = `<button class="claim-btn" disabled style="background:#1565C0;cursor:not-allowed;">🚗 You Claimed This</button>`;
+                        const codeDiv = document.createElement('div');
+                        codeDiv.style.cssText = 'background:#e3f2fd;border:2px solid #1565C0;border-radius:8px;padding:10px;margin:8px 0;text-align:center;';
+                        codeDiv.innerHTML = `
+                            <div style="font-size:0.78rem;color:#1565C0;font-weight:700;">🔑 YOUR PICKUP CODE</div>
+                            <div style="font-size:1.6rem;font-weight:900;color:#1565C0;letter-spacing:4px;">${pickupCode}</div>
+                            <div style="font-size:0.72rem;color:#555;">Show this to the donor</div>`;
+                        card.appendChild(codeDiv);
+                        card.style.opacity = '0.85';
+                    }
+                    alert(`✅ Food claimed!\n\nPickup Code: ${pickupCode}\n\nShow this code to the donor.`);
+                } else {
+                    alert('❌ ' + (data.message || 'Could not claim food'));
+                }
+            } catch(e) {
+                closeClaimModal();
+                alert('❌ Error: ' + e.message);
+            }
+        }
+
+        function closeClaimModal() {
+            document.getElementById('ngoClaimModal').style.display = 'none';
+            const btn = document.getElementById('claimSubmitBtn');
+            if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Claim'; }
+        }
+
+        // Countdown Timer Function
+        function startCountdown(foodId, expiryTime) {
+            const timerElement = document.getElementById(`countdown-${foodId}`);
+            const timerContainer = document.getElementById(`timer-${foodId}`);
+            
+            if (!timerElement || !timerContainer) return;
+            
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const expiry = new Date(expiryTime).getTime();
+                const distance = expiry - now;
+                
+                if (distance < 0) {
+                    // Food expired
+                    timerElement.innerHTML = "EXPIRED";
+                    timerContainer.className = 'expiry-timer expired';
+                    
+                    // Disable claim button
+                    const claimBtn = timerContainer.parentElement.querySelector('.claim-btn');
+                    if (claimBtn) {
+                        claimBtn.disabled = true;
+                        claimBtn.textContent = '❌ Food Expired';
+                        claimBtn.style.background = '#95a5a6';
+                        claimBtn.style.cursor = 'not-allowed';
+                    }
+                    
+                    // Send expiry alert to backend
+                    sendExpiryAlert(foodId);
+                    return;
+                }
+                
+                // Calculate time units
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                let timeString = '';
+                let timerClass = 'expiry-timer';
+                
+                if (days > 0) {
+                    timeString = `${days}d ${hours}h ${minutes}m`;
+                } else if (hours > 0) {
+                    timeString = `${hours}h ${minutes}m ${seconds}s`;
+                    if (hours < 2) {
+                        timerClass = 'expiry-timer urgent';
+                    } else if (hours < 6) {
+                        timerClass = 'expiry-timer warning';
+                    }
+                } else if (minutes > 0) {
+                    timeString = `${minutes}m ${seconds}s`;
+                    timerClass = 'expiry-timer urgent';
+                } else {
+                    timeString = `${seconds}s`;
+                    timerClass = 'expiry-timer urgent';
+                }
+                
+                timerElement.innerHTML = timeString;
+                timerContainer.className = timerClass;
+            }
+            
+            // Update immediately
+            updateCountdown();
+            
+            // Update every second
+            const interval = setInterval(updateCountdown, 1000);
+            
+            // Store interval ID for cleanup
+            timerContainer.dataset.intervalId = interval;
+        }
+
+        // Send expiry alert to backend
+        async function sendExpiryAlert(foodId) {
+            try {
+                await fetch(`/api/food/${foodId}/expired`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+            } catch (error) {
+                console.error('Error sending expiry alert:', error);
+            }
+        }
+
+        // Cleanup intervals when page unloads
+        window.addEventListener('beforeunload', () => {
+            document.querySelectorAll('.expiry-timer').forEach(timer => {
+                const intervalId = timer.dataset.intervalId;
+                if (intervalId) {
+                    clearInterval(intervalId);
+                }
+            });
+        });
+
+        // Background image rotation - Food donation themed
+        const images = [
+            'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1920', // Food donation boxes
+            'https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=1920', // Volunteers with food
+            'https://images.unsplash.com/photo-1593113646773-028c64a8f1b8?w=1920', // Community food sharing
+            'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920', // Fresh vegetables
+            'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=1920'  // Food preparation
+        ];
+        let currentIndex = 0;
+
+        setInterval(() => {
+            const bgElements = document.querySelectorAll('.page-bg');
+            bgElements.forEach(bg => bg.classList.remove('active'));
+            
+            currentIndex = (currentIndex + 1) % images.length;
+            bgElements[0].style.backgroundImage = `url('${images[currentIndex]}')`;
+            
+            setTimeout(() => {
+                bgElements[0].classList.add('active');
+            }, 50);
+        }, 5000);
+    </script>
+<!-- NGO Claim Modal -->
+<div id="ngoClaimModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:16px; padding:28px; width:90%; max-width:440px; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <h3 style="color:#1b5e20; margin-bottom:6px; font-size:1.2rem;">🏢 NGO Details</h3>
+        <p style="color:#888; font-size:0.85rem; margin-bottom:20px;">Fill your NGO information to claim this food</p>
+        <input type="hidden" id="claimFoodId">
+
+        <div style="display:flex; flex-direction:column; gap:12px;">
+            <div>
+                <label style="font-size:0.8rem; font-weight:600; color:#444; display:block; margin-bottom:4px;">🏢 NGO Name *</label>
+                <input type="text" id="claimNgoName" placeholder="e.g. Seva Sangh"
+                    style="width:100%; padding:10px 12px; border:2px solid #e0e0e0; border-radius:8px; font-size:0.9rem; box-sizing:border-box;">
+            </div>
+            <div>
+                <label style="font-size:0.8rem; font-weight:600; color:#444; display:block; margin-bottom:4px;">📞 Contact Number *</label>
+                <input type="tel" id="claimNgoContact" placeholder="e.g. 9876543210"
+                    style="width:100%; padding:10px 12px; border:2px solid #e0e0e0; border-radius:8px; font-size:0.9rem; box-sizing:border-box;">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div>
+                    <label style="font-size:0.8rem; font-weight:600; color:#444; display:block; margin-bottom:4px;">📍 Taluka *</label>
+                    <input type="text" id="claimNgoTaluka" placeholder="e.g. Pandharpur"
+                        style="width:100%; padding:10px 12px; border:2px solid #e0e0e0; border-radius:8px; font-size:0.9rem; box-sizing:border-box;">
+                </div>
+                <div>
+                    <label style="font-size:0.8rem; font-weight:600; color:#444; display:block; margin-bottom:4px;">🏘️ Area *</label>
+                    <input type="text" id="claimNgoArea" placeholder="e.g. Kasegaon"
+                        style="width:100%; padding:10px 12px; border:2px solid #e0e0e0; border-radius:8px; font-size:0.9rem; box-sizing:border-box;">
+                </div>
+            </div>
+        </div>
+
+        <div id="claimFormErr" style="display:none; color:#c62828; font-size:0.82rem; margin-top:8px;">
+            ⚠️ Please fill all fields.
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button onclick="closeClaimModal()"
+                style="flex:1; padding:11px; background:#f5f5f5; color:#555; border:none; border-radius:8px; font-size:0.9rem; font-weight:600; cursor:pointer;">
+                Cancel
+            </button>
+            <button id="claimSubmitBtn" onclick="submitClaim()"
+                style="flex:2; padding:11px; background:linear-gradient(135deg,#1b5e20,#4CAF50); color:white; border:none; border-radius:8px; font-size:0.9rem; font-weight:700; cursor:pointer;">
+                ✅ Confirm Claim
+            </button>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Language Switcher -->
+    </body>
+</html>

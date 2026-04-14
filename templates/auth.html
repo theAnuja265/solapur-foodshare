@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Solapur Food Bridge</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- CryptoJS Library for AES Encryption -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-image: url('https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1920&q=80');
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(15, 23, 42, 0.8)),
+                        url('https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1920&q=80') center/cover,
+                        url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920&q=80') center/cover,
+                        url('https://images.unsplash.com/photo-1593113646773-028c64a8f1b8?w=1920&q=80') center/cover;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                rgba(0, 0, 0, 0.6) 0%,
+                rgba(15, 23, 42, 0.7) 50%,
+                rgba(0, 0, 0, 0.8) 100%);
+            z-index: -1;
+            animation: darkGradientShift 12s ease-in-out infinite;
+            backdrop-filter: blur(8px);
+        }
+        
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-image) center/cover;
+            background-size: cover;
+            opacity: 0.2;
+            z-index: -2;
+            animation: darkImageShift 18s ease-in-out infinite;
+            filter: blur(3px) brightness(0.7);
+            transition: background-image 2s ease-in-out;
+        }
+        
+        @keyframes darkGradientShift {
+            0%, 100% { 
+                opacity: 0.7; 
+                backdrop-filter: blur(8px) brightness(0.9);
+            }
+            50% { 
+                opacity: 0.8; 
+                backdrop-filter: blur(10px) brightness(0.8);
+            }
+        }
+        
+        @keyframes darkImageShift {
+            0%, 100% { 
+                transform: scale(1.1) rotate(0deg); 
+                filter: blur(3px) brightness(0.7);
+            }
+            50% { 
+                transform: scale(1.15) rotate(0.5deg); 
+                filter: blur(4px) brightness(0.6);
+            }
+        }
+
+        .auth-container {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.4), 
+                        0 0 60px rgba(16, 185, 129, 0.1),
+                        inset 0 0 20px rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            max-width: 1000px;
+            width: 90%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 700px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .auth-left {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.95), rgba(34, 197, 94, 0.9));
+            color: white;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-left h2 {
+            font-size: 2.8rem;
+            margin-bottom: 1.2rem;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            font-weight: 800;
+        }
+
+        .auth-left p {
+            font-size: 1.15rem;
+            opacity: 0.95;
+            margin-bottom: 2.5rem;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            line-height: 1.7;
+        }
+
+        .auth-right {
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .logo i {
+            margin-right: 0.5rem;
+            color: #10b981;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.5rem;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .auth-tab.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #e5e7eb;
+            font-size: 0.95rem;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+        }
+
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .form-group select option {
+            background: rgba(15, 23, 42, 0.95);
+            color: #ffffff;
+        }
+
+        .btn {
+            padding: 1.2rem;
+            background: linear-gradient(135deg, #10b981 0%, #22c55e 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .back-home {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            color: white;
+            text-decoration: none;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            transition: opacity 0.3s;
+        }
+
+        .back-home:hover {
+            opacity: 0.8;
+        }
+
+        .back-home i {
+            margin-right: 0.5rem;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .auth-container {
+                grid-template-columns: 1fr;
+                max-width: 500px;
+            }
+            
+            .auth-left {
+                display: none;
+            }
+            
+            .auth-right {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-home">
+        <i class="fas fa-arrow-left"></i>
+        Back to Home
+    </a>
+    
+    <div class="auth-container">
+        <div class="auth-left">
+            <h2>Welcome to Solapur Food Bridge</h2>
+            <p>Join our community-driven platform to reduce food waste and fight hunger across Solapur district.</p>
+        </div>
+        
+        <div class="auth-right">
+            <div class="logo">
+                <i class="fas fa-utensils"></i>
+                Solapur Food Bridge
+            </div>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="showTab('login')">Login</button>
+                <button class="auth-tab" onclick="showTab('register')">Register</button>
+            </div>
+            
+            <div id="message"></div>
+            
+            <!-- Login Form -->
+            <form id="loginForm" class="auth-form" autocomplete="off">
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <input type="email" id="loginEmail" required placeholder="Enter your email" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" required placeholder="Enter your password" autocomplete="new-password">
+                </div>
+                <button type="submit" class="btn" id="loginBtn">
+                    <span class="btn-text">Login</span>
+                </button>
+            </form>
+            
+            <!-- Register Form -->
+            <form id="registerForm" class="auth-form hidden">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" required placeholder="Enter your full name">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" required placeholder="Create a password">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" required placeholder="Enter 10-digit mobile number" maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label for="userType">I am a</label>
+                    <select id="userType" required>
+                        <option value="">Select your role</option>
+                        <option value="donor">Food Donor (Restaurant/Individual)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="area">Area in Solapur District</label>
+                    <select id="area" required>
+                        <option value="">Select your area</option>
+                        <option value="Solapur City">Solapur City</option>
+                        <option value="Pandharpur">Pandharpur</option>
+                        <option value="Akkalkot">Akkalkot</option>
+                        <option value="Barshi">Barshi</option>
+                        <option value="Karmala">Karmala</option>
+                        <option value="Madha">Madha</option>
+                        <option value="Malshiras">Malshiras</option>
+                        <option value="Mangalvedhe">Mangalvedhe</option>
+                        <option value="Mohol">Mohol</option>
+                        <option value="North Solapur">North Solapur</option>
+                        <option value="South Solapur">South Solapur</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="address">Complete Address</label>
+                    <textarea id="address" rows="3" required placeholder="Enter your complete address"></textarea>
+                </div>
+                <button type="submit" class="btn" id="registerBtn">
+                    <span class="btn-text">Create Account</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // DYNAMIC BACKGROUND IMAGES - Social Food Sharing
+        const backgroundImages = [
+            'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1920&q=80',
+            'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920&q=80',
+            'https://images.unsplash.com/photo-1593113646773-028c64a8f1b8?w=1920&q=80',
+            'https://images.unsplash.com/photo-1509099863731-ef4bff19e808?w=1920&q=80',
+            'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=1920&q=80',
+            'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=1920&q=80'
+        ];
+        
+        let currentImageIndex = 0;
+        
+        function rotateBackgroundImages() {
+            currentImageIndex = (currentImageIndex + 1) % backgroundImages.length;
+            document.documentElement.style.setProperty('--bg-image', `url('${backgroundImages[currentImageIndex]}')`);
+            console.log('🖼️ Background image changed to:', backgroundImages[currentImageIndex]);
+        }
+        
+        // Rotate images every 8 seconds
+        setInterval(rotateBackgroundImages, 8000);
+        
+        // Initialize first image
+        document.addEventListener('DOMContentLoaded', () => {
+            document.documentElement.style.setProperty('--bg-image', `url('${backgroundImages[0]}')`);
+            console.log('🖼️ Initial background image set');
+        });
+        
+        // AES ENCRYPTION CONFIGURATION
+        const SHARED_SECRET_KEY = 'FoodShareSolapur2026SecureKey123!@#';
+        
+        console.log('🔐 Auth Page Loaded');
+        console.log('🔑 Shared Secret Key:', SHARED_SECRET_KEY);
+        console.log('📚 CryptoJS Library:', typeof CryptoJS !== 'undefined' ? 'LOADED' : 'NOT LOADED');
+        
+        // AES ENCRYPTION FUNCTIONS
+        function encryptWithAES(data) {
+            try {
+                const dataString = typeof data === 'string' ? data : JSON.stringify(data);
+                const encrypted = CryptoJS.AES.encrypt(dataString, SHARED_SECRET_KEY, {
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+                return encrypted.toString();
+            } catch (error) {
+                console.error('❌ Encryption Error:', error);
+                return null;
+            }
+        }
+        
+        function decryptWithAES(encryptedData) {
+            try {
+                const decrypted = CryptoJS.AES.decrypt(encryptedData, SHARED_SECRET_KEY, {
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+                return decrypted.toString(CryptoJS.enc.Utf8);
+            } catch (error) {
+                console.error('❌ Decryption Error:', error);
+                return null;
+            }
+        }
+        
+        // Test encryption on page load
+        function testEncryption() {
+            try {
+                const testData = 'test@example.com';
+                const encrypted = encryptWithAES(testData);
+                const decrypted = decryptWithAES(encrypted);
+                
+                console.log('🔐 Encryption Test:', {
+                    original: testData,
+                    encrypted: encrypted,
+                    decrypted: decrypted,
+                    success: testData === decrypted
+                });
+                
+                if (testData === decrypted) {
+                    console.log('✅ AES Encryption Working!');
+                    return true;
+                } else {
+                    console.log('❌ AES Encryption Failed!');
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ Encryption Test Error:', error);
+                return false;
+            }
+        }
+        
+        // Initialize encryption
+        const encryptionWorking = testEncryption();
+        
+        const API_BASE = `${window.location.protocol}//${window.location.host}/api`;
+        console.log('API Base URL:', API_BASE);
+        
+        function showTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            
+            // Find the clicked button and add active class
+            const clickedButton = Array.from(document.querySelectorAll('.auth-tab')).find(btn => 
+                (tab === 'login' && btn.textContent.trim() === 'Login') || 
+                (tab === 'register' && btn.textContent.trim() === 'Register')
+            );
+            
+            if (clickedButton) {
+                clickedButton.classList.add('active');
+            }
+            
+            // Show/hide forms
+            if (tab === 'login') {
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('registerForm').classList.add('hidden');
+            } else {
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('registerForm').classList.remove('hidden');
+            }
+            
+            // Clear messages
+            document.getElementById('message').innerHTML = '';
+        }
+        
+        function showMessage(message, type = 'success') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="message ${type}">${message}</div>`;
+        }
+        
+        function setLoading(buttonId, loading) {
+            const btn = document.getElementById(buttonId);
+            const btnText = btn.querySelector('.btn-text');
+            
+            if (loading) {
+                btn.disabled = true;
+                btnText.innerHTML = '<span class="loading"></span>Processing...';
+            } else {
+                btn.disabled = false;
+                btnText.innerHTML = buttonId === 'loginBtn' ? 'Login' : 'Create Account';
+            }
+        }
+        
+        // LOGIN HANDLER - WITH ENCRYPTION
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            setLoading('loginBtn', true);
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            // Send plain text - no encryption needed (HTTPS handles security)
+            const loginData = {
+                email: email,
+                password: password,
+                encrypted: false,
+                timestamp: Date.now()
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loginData)
+                });
+                
+                const data = await response.json();
+                console.log('📋 Response Data:', data);
+                
+                if (response.ok) {
+                    localStorage.setItem('authToken', data.access_token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    localStorage.setItem('userEmail', data.user.email);
+                    
+                    const dashboardUrl = data.user.user_type === 'donor' ? '/test-donor' : '/test-ngo';
+                    const dashboardName = data.user.user_type === 'donor' ? 'Donor Dashboard' : 'NGO Dashboard';
+                    
+                    showMessage(`✅ Login Successful! <br><br><a href="${dashboardUrl}" style="color: #10b981; font-weight: bold; text-decoration: none;">Click here to go to ${dashboardName} →</a>`);
+                    
+                    setTimeout(() => {
+                        window.location.href = dashboardUrl;
+                    }, 2000);
+                } else {
+                    console.log('❌ Login Failed:', data);
+                    showMessage(data.message || 'Invalid email or password', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Login Error:', error);
+                showMessage('Network error. Please check your connection and try again.', 'error');
+            } finally {
+                setLoading('loginBtn', false);
+            }
+        });
+        
+        // REGISTER HANDLER - WITH ENCRYPTION
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            setLoading('registerBtn', true);
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                phone: document.getElementById('phone').value,
+                user_type: document.getElementById('userType').value,
+                area: document.getElementById('area').value,
+                address: document.getElementById('address').value
+            };
+            
+            console.log('🔑 Registration Attempt:', formData);
+            
+            // Send plain text - no encryption needed
+            const registerData = {
+                ...formData,
+                encrypted: false,
+                timestamp: Date.now()
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(registerData)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage(`✅ Registration Successful! <br><br><a href="/auth.html" style="color: #10b981; font-weight: bold; text-decoration: none;">Click here to login →</a>`);
+                    
+                    // Clear form
+                    document.getElementById('registerForm').reset();
+                    
+                    // Switch to login tab
+                    setTimeout(() => {
+                        showTab('login');
+                    }, 3000);
+                } else {
+                    console.log('❌ Registration Failed:', data);
+                    showMessage(data.message || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                console.error('❌ Registration Error:', error);
+                showMessage('Network error. Please check your connection and try again.', 'error');
+            } finally {
+                setLoading('registerBtn', false);
+            }
+        });
+    </script>
+</body>
+</html>

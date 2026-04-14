@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Route Map - Solapur Food Share</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; min-height: 100vh; }
+
+        /* ── Header ── */
+        .header {
+            background: linear-gradient(135deg, #1b5e20, #4CAF50);
+            color: white; padding: 14px 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .header h1 { font-size: 1.2rem; display: flex; align-items: center; gap: 10px; }
+        .back-btn {
+            background: rgba(255,255,255,0.2); border: none; color: white;
+            padding: 8px 16px; border-radius: 20px; cursor: pointer;
+            font-size: 0.85rem; display: flex; align-items: center; gap: 6px;
+            text-decoration: none; transition: background 0.2s;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.35); }
+
+        /* ── Layout ── */
+        .page-layout {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            height: calc(100vh - 54px);
+        }
+        @media (max-width: 768px) {
+            .page-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; }
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            background: white; overflow-y: auto;
+            box-shadow: 2px 0 12px rgba(0,0,0,0.08);
+            display: flex; flex-direction: column; gap: 0;
+        }
+        .sidebar-section { padding: 16px; border-bottom: 1px solid #eee; }
+        .sidebar-section h3 {
+            font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;
+            color: #888; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+        }
+
+        /* Location cards */
+        .loc-card {
+            border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+            border: 2px solid transparent; cursor: pointer; transition: all 0.2s;
+        }
+        .loc-card.ngo  { background: #e3f2fd; border-color: #1565C0; }
+        .loc-card.donor { background: #fce4ec; border-color: #c62828; }
+        .loc-card .loc-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+        .loc-card.ngo  .loc-label { color: #1565C0; }
+        .loc-card.donor .loc-label { color: #c62828; }
+        .loc-card .loc-name { font-size: 0.95rem; font-weight: 600; color: #222; }
+        .loc-card .loc-coords { font-size: 0.75rem; color: #888; margin-top: 3px; font-family: monospace; }
+        .loc-card .loc-status { font-size: 0.75rem; margin-top: 4px; }
+        .loc-status.live { color: #2e7d32; }
+        .loc-status.manual { color: #e65100; }
+
+        /* Stats bar */
+        .stats-bar {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 10px; padding: 14px 16px; background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+        }
+        .stat-box {
+            background: white; border-radius: 10px; padding: 12px;
+            text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+        .stat-box .val { font-size: 1.4rem; font-weight: 700; color: #1b5e20; }
+        .stat-box .lbl { font-size: 0.72rem; color: #888; margin-top: 2px; }
+
+        /* Food info */
+        .food-info-card {
+            background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+            border-radius: 10px; padding: 12px 14px;
+            border-left: 4px solid #4CAF50;
+        }
+        .food-info-card .food-title { font-size: 1rem; font-weight: 700; color: #1b5e20; }
+        .food-info-card .food-meta { font-size: 0.82rem; color: #555; margin-top: 6px; line-height: 1.7; }
+
+        /* Buttons */
+        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 14px 16px; }
+        .btn {
+            flex: 1; min-width: 120px; padding: 10px 14px; border: none;
+            border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            transition: all 0.2s; text-decoration: none;
+        }
+        .btn-green  { background: #4CAF50; color: white; }
+        .btn-blue   { background: #1565C0; color: white; }
+        .btn-orange { background: #e65100; color: white; }
+        .btn:hover  { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* Turn-by-turn instructions */
+        .instructions-list { list-style: none; padding: 0; }
+        .instructions-list li {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.82rem; color: #444;
+        }
+        .instructions-list li:last-child { border-bottom: none; }
+        .step-num {
+            background: #4CAF50; color: white; border-radius: 50%;
+            width: 22px; height: 22px; min-width: 22px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700;
+        }
+        .step-dist { font-size: 0.72rem; color: #888; margin-top: 2px; }
+
+        /* Map container */
+        #map { width: 100%; height: 100%; min-height: 400px; }
+        @media (max-width: 768px) { #map { height: 55vh; } }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: absolute; inset: 0; background: rgba(255,255,255,0.85);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 9999; gap: 14px; border-radius: 0;
+        }
+        .loading-overlay.hidden { display: none; }
+        .spinner {
+            width: 48px; height: 48px;
+            border: 5px solid #e0e0e0; border-top-color: #4CAF50;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 0.95rem; color: #555; font-weight: 500; }
+
+        /* Alert */
+        .alert {
+            margin: 10px 16px; padding: 10px 14px; border-radius: 8px;
+            font-size: 0.83rem; display: none;
+        }
+        .alert.show { display: block; }
+        .alert-warn { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+        .alert-err  { background: #fce4ec; color: #c62828; border: 1px solid #ef9a9a; }
+        .alert-ok   { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+
+        /* Leaflet routing override */
+        .leaflet-routing-container { display: none !important; }
+        .leaflet-routing-collapse-btn { display: none !important; }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+    <h1><i class="fas fa-route"></i> Food Pickup Route Map</h1>
+    <a href="/test-ngo" class="back-btn"><i class="fas fa-arrow-left"></i> Dashboard</a>
+</header>
+
+<div class="page-layout">
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar">
+
+        <!-- Alert -->
+        <div id="alertBox" class="alert"></div>
+
+        <!-- Food Info -->
+        <div class="sidebar-section">
+            <h3><i class="fas fa-utensils"></i> Food Details</h3>
+            <div class="food-info-card">
+                <div class="food-title" id="foodTitle">Loading...</div>
+                <div class="food-meta" id="foodMeta"></div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-bar">
+            <div class="stat-box">
+                <div class="val" id="statDist">--</div>
+                <div class="lbl">Distance</div>
+            </div>
+            <div class="stat-box">
+                <div class="val" id="statETA">--</div>
+                <div class="lbl">Est. Time</div>
+            </div>
+        </div>
+
+        <!-- NGO Selector -->
+        <div class="sidebar-section" id="ngoSelectorSection">
+            <h3><i class="fas fa-building"></i> Select NGO</h3>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <select id="ngoTalukaSelect" onchange="loadNGOsByTaluka()"
+                    style="width:100%; padding:8px 10px; border:2px solid #1565C0; border-radius:8px; font-size:0.85rem; cursor:pointer;">
+                    <option value="">-- Select Taluka --</option>
+                    <option>Pandharpur</option><option>Barshi</option>
+                    <option>Solapur City</option><option>North Solapur</option>
+                    <option>South Solapur</option><option>Akkalkot</option>
+                    <option>Karmala</option><option>Madha</option>
+                    <option>Malshiras</option><option>Mangalvedhe</option>
+                    <option>Mohol</option><option>Sangola</option>
+                </select>
+                <select id="ngoPickSelect" onchange="onNGOPicked()" style="display:none;
+                    width:100%; padding:8px 10px; border:2px solid #1565C0; border-radius:8px; font-size:0.85rem; cursor:pointer;">
+                    <option value="">-- Select NGO --</option>
+                </select>
+                <div id="ngoPickedInfo" style="display:none; background:#e3f2fd; border-radius:8px; padding:10px; font-size:0.82rem; color:#1565C0; line-height:1.6;"></div>
+                <button onclick="drawRouteFromNGO()" id="btnDrawRoute"
+                    style="display:none; width:100%; padding:9px; background:#1565C0; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.85rem;">
+                    🗺️ Show Route on Map
+                </button>
+                <a id="btnGmapsNGO" href="#" target="_blank" style="display:none;
+                    text-align:center; padding:9px; background:#4285F4; color:white;
+                    border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none;">
+                    📱 Open in Google Maps
+                </a>
+            </div>
+        </div>
+
+        <!-- Locations -->
+        <div class="sidebar-section">
+            <h3><i class="fas fa-map-marker-alt"></i> Locations</h3>
+            <div class="loc-card ngo" id="ngoCard">
+                <div class="loc-label">🏢 NGO (You)</div>
+                <div class="loc-name" id="ngoName">Detecting...</div>
+                <div class="loc-coords" id="ngoCoords">Getting GPS...</div>
+                <div class="loc-status live" id="ngoStatus">⏳ Locating...</div>
+            </div>
+            <div class="loc-card donor" id="donorCard">
+                <div class="loc-label">🍽️ Donor Location</div>
+                <div class="loc-name" id="donorName">Loading...</div>
+                <div class="loc-coords" id="donorCoords">--</div>
+                <div class="loc-status manual" id="donorStatus">📍 From food data</div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="btn-row">
+            <button class="btn btn-green" id="btnRefresh" onclick="refreshRoute()">
+                <i class="fas fa-sync-alt"></i> Refresh Route
+            </button>
+            <a class="btn btn-blue" id="btnGmaps" href="#" target="_blank">
+                <i class="fas fa-directions"></i> Google Maps
+            </a>
+        </div>
+        <div class="btn-row" style="padding-top:0;">
+            <button class="btn btn-orange" onclick="recenterMap()">
+                <i class="fas fa-crosshairs"></i> Recenter
+            </button>
+        </div>
+
+        <!-- Turn-by-turn -->
+        <div class="sidebar-section" id="stepsSection" style="display:none;">
+            <h3><i class="fas fa-list-ol"></i> Turn-by-Turn Directions</h3>
+            <ul class="instructions-list" id="stepsList"></ul>
+        </div>
+
+    </aside>
+
+    <!-- ── Map ── -->
+    <div style="position:relative;">
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="spinner"></div>
+            <div class="loading-text" id="loadingText">Fetching route...</div>
+        </div>
+        <div id="map"></div>
+    </div>
+</div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+const params   = new URLSearchParams(window.location.search);
+const foodId   = params.get('food_id');
+const ngoEmail = params.get('email') || localStorage.getItem('userEmail') || '';
+
+let map, routingControl, watchId;
+let ngoLat = null, ngoLng = null;
+let donorLat = null, donorLng = null;
+let ngoMarker = null, donorMarker = null;
+let foodData = null;
+let allNGOContacts = [];
+let selectedNGO = null;
+
+// ── NGO Selector Functions ────────────────────────────────────────────────────
+async function loadNGOsByTaluka() {
+    const taluka = document.getElementById('ngoTalukaSelect').value;
+    if (!taluka) return;
+
+    try {
+        const res = await fetch('/api/ngo-contacts');
+        const data = await res.json();
+        allNGOContacts = (data.contacts || []).filter(c => c.active);
+
+        const matching = allNGOContacts.filter(n =>
+            (n.taluka || '').toLowerCase() === taluka.toLowerCase() ||
+            (n.area || '').toLowerCase().includes(taluka.toLowerCase())
+        );
+        const others = allNGOContacts.filter(n => !matching.includes(n));
+
+        const sel = document.getElementById('ngoPickSelect');
+        sel.innerHTML = '<option value="">-- Select NGO --</option>';
+
+        if (matching.length > 0) {
+            const g1 = document.createElement('optgroup');
+            g1.label = `📍 ${taluka} NGOs (${matching.length})`;
+            matching.forEach(n => {
+                const o = document.createElement('option');
+                o.value = n.id; o.textContent = n.name;
+                g1.appendChild(o);
+            });
+            sel.appendChild(g1);
+        }
+        if (others.length > 0) {
+            const g2 = document.createElement('optgroup');
+            g2.label = 'Other NGOs';
+            others.forEach(n => {
+                const o = document.createElement('option');
+                o.value = n.id; o.textContent = `${n.name} (${n.taluka || n.area || ''})`;
+                g2.appendChild(o);
+            });
+            sel.appendChild(g2);
+        }
+
+        sel.style.display = 'block';
+        document.getElementById('ngoPickedInfo').style.display = 'none';
+        document.getElementById('btnDrawRoute').style.display = 'none';
+        document.getElementById('btnGmapsNGO').style.display = 'none';
+    } catch(e) {
+        console.error('NGO load error:', e);
+    }
+}
+
+function onNGOPicked() {
+    const id = parseInt(document.getElementById('ngoPickSelect').value);
+    selectedNGO = allNGOContacts.find(n => n.id === id);
+    if (!selectedNGO) return;
+
+    const coords = areaToCoords(selectedNGO.area, selectedNGO.taluka);
+
+    document.getElementById('ngoPickedInfo').innerHTML = `
+        <strong>🏢 ${selectedNGO.name}</strong><br>
+        📍 ${selectedNGO.area || selectedNGO.taluka || 'N/A'}<br>
+        📞 ${selectedNGO.phone}
+        ${coords ? '<br><span style="color:#2e7d32;">✅ Location available</span>' : '<br><span style="color:#e65100;">⚠️ Approximate location</span>'}
+    `;
+    document.getElementById('ngoPickedInfo').style.display = 'block';
+    document.getElementById('btnDrawRoute').style.display = 'block';
+
+    // Set NGO coords
+    if (coords) {
+        ngoLat = coords[0]; ngoLng = coords[1];
+        document.getElementById('ngoName').textContent = selectedNGO.name;
+        document.getElementById('ngoCoords').textContent = `~${ngoLat.toFixed(4)}, ${ngoLng.toFixed(4)}`;
+        document.getElementById('ngoStatus').textContent = `📍 ${selectedNGO.area || selectedNGO.taluka}`;
+    }
+
+    // Update Google Maps link
+    if (donorLat && donorLng && coords) {
+        const gmapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${coords[0]},${coords[1]}&destination=${donorLat},${donorLng}&travelmode=driving`;
+        const btn = document.getElementById('btnGmapsNGO');
+        btn.href = gmapsUrl;
+        btn.style.display = 'block';
+        document.getElementById('btnGmaps').href = gmapsUrl;
+    }
+}
+
+function drawRouteFromNGO() {
+    if (!ngoLat || !ngoLng) { showAlert('NGO location not found.', 'warn'); return; }
+
+    // If donor coords not set, use food taluka/area fallback
+    if (!donorLat || !donorLng) {
+        if (foodData) {
+            const fb = areaToCoords(foodData.area, foodData.taluka);
+            if (fb) { donorLat = fb[0]; donorLng = fb[1]; }
+        }
+    }
+    if (!donorLat || !donorLng) { showAlert('Donor location not found.', 'warn'); return; }
+
+    // Place NGO marker
+    if (ngoMarker) ngoMarker.remove();
+    ngoMarker = L.marker([ngoLat, ngoLng], { icon: NGO_ICON })
+        .addTo(map)
+        .bindPopup(`<b>🏢 ${selectedNGO ? selectedNGO.name : 'NGO'}</b><br>📍 ${selectedNGO ? (selectedNGO.area || selectedNGO.taluka) : ''}<br>📞 ${selectedNGO ? selectedNGO.phone : ''}`)
+        .openPopup();
+
+    // Place donor marker
+    if (donorMarker) donorMarker.remove();
+    donorMarker = L.marker([donorLat, donorLng], { icon: DONOR_ICON })
+        .addTo(map)
+        .bindPopup(`<b>🍽️ ${foodData ? foodData.title : 'Donor'}</b><br>📍 ${foodData ? (foodData.pickup_address || foodData.area) : ''}`);
+
+    // Fit both in view
+    map.fitBounds(L.latLngBounds([[ngoLat, ngoLng], [donorLat, donorLng]]), { padding: [60, 60] });
+
+    // Draw route
+    drawRoute();
+}
+
+// ── Area fallback coords (when GPS not stored) ────────────────────────────────
+const AREA_COORDS = {
+    // Pandharpur Taluka
+    'Pandharpur':   [17.6868, 75.3310],
+    'Gopalpur':     [17.6720, 75.3380],
+    'Visava':       [17.7050, 75.3420],
+    'Isbavi':       [17.7200, 75.3150],
+    'Kasegaon':     [17.6180, 75.3250],
+    'Shetphal':     [17.6500, 75.2800],
+    'Mangalvedhe':  [17.5200, 75.4500],
+    'Velapur':      [17.7500, 75.2500],
+    'Narkhed':      [17.6200, 75.3800],
+    'Wakhari':      [17.7300, 75.3600],
+    'Padvi':        [17.6600, 75.3100],
+    // Barshi Taluka
+    'Barshi':       [18.2333, 75.6944],
+    // Solapur
+    'Solapur City': [17.6868, 75.9064],
+    'Solapur':      [17.6868, 75.9064],
+    // Mohol
+    'Mohol':        [17.7167, 75.6833],
+    // Others
+    'Akkalkot':     [17.5167, 76.2000],
+    'Malshiras':    [17.8500, 74.9167],
+    'Karmala':      [18.4000, 75.1833],
+};
+
+function areaToCoords(area, taluka) {
+    const key = area || taluka || '';
+    if (AREA_COORDS[key]) return AREA_COORDS[key];
+    for (const k of Object.keys(AREA_COORDS)) {
+        if (key.toLowerCase().includes(k.toLowerCase())) return AREA_COORDS[k];
+    }
+    // Fallback to taluka coords
+    const talukaKey = taluka || '';
+    if (AREA_COORDS[talukaKey]) return AREA_COORDS[talukaKey];
+    for (const k of Object.keys(AREA_COORDS)) {
+        if (talukaKey.toLowerCase().includes(k.toLowerCase())) return AREA_COORDS[k];
+    }
+    return null;
+}
+
+// ── Custom icons ──────────────────────────────────────────────────────────────
+function makeIcon(emoji, color) {
+    return L.divIcon({
+        html: `<div style="background:${color};color:white;border-radius:50% 50% 50% 0;
+            width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+            font-size:22px;transform:rotate(-45deg);box-shadow:0 4px 12px rgba(0,0,0,0.35);
+            border:3px solid white;">
+            <span style="transform:rotate(45deg)">${emoji}</span></div>`,
+        iconSize: [44, 44], iconAnchor: [22, 44], popupAnchor: [0, -44], className: ''
+    });
+}
+const NGO_ICON   = makeIcon('🏢', '#1565C0');
+const DONOR_ICON = makeIcon('🍽️', '#c62828');
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function showLoading(msg) {
+    document.getElementById('loadingText').textContent = msg || 'Loading...';
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+}
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+}
+function showAlert(msg, type) {
+    const el = document.getElementById('alertBox');
+    el.textContent = msg;
+    el.className = `alert show alert-${type}`;
+    setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+// ── Init map ──────────────────────────────────────────────────────────────────
+function initMap() {
+    map = L.map('map', { zoomControl: true }).setView([17.6868, 75.3310], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        maxZoom: 19
+    }).addTo(map);
+
+    // Scale control
+    L.control.scale({ imperial: false }).addTo(map);
+}
+
+// ── Load food data from backend ───────────────────────────────────────────────
+async function loadFoodData() {
+    if (!foodId) {
+        // No food_id — show generic map with just NGO location
+        document.getElementById('foodTitle').textContent = 'Live Location Map';
+        document.getElementById('foodMeta').textContent = 'Showing your current location.';
+        startNGOTracking();
+        return;
+    }
+    try {
+        const res = await fetch(`/api/food/detail/${foodId}`);
+        if (!res.ok) throw new Error('Food not found');
+        const data = await res.json();
+        foodData = data.food || data;
+
+        document.getElementById('foodTitle').textContent = foodData.title || 'Food Item';
+        document.getElementById('foodMeta').innerHTML = `
+            📦 ${foodData.quantity || '--'}<br>
+            📍 ${foodData.pickup_address || foodData.area || '--'}<br>
+            📞 ${foodData.contact_person_name || '--'} · ${foodData.contact_person_phone || '--'}<br>
+            ⏰ Expires: ${foodData.expiry_time ? new Date(foodData.expiry_time).toLocaleString() : '--'}
+        `;
+        document.getElementById('donorName').textContent = foodData.area || 'Donor Location';
+
+        // Set donor coords
+        if (foodData.gps_latitude && foodData.gps_longitude) {
+            donorLat = parseFloat(foodData.gps_latitude);
+            donorLng = parseFloat(foodData.gps_longitude);
+            document.getElementById('donorCoords').textContent = `${donorLat.toFixed(5)}, ${donorLng.toFixed(5)}`;
+            document.getElementById('donorStatus').textContent = '✅ Exact GPS location';
+            document.getElementById('donorStatus').className = 'loc-status live';
+        } else {
+            const fb = areaToCoords(foodData.area, foodData.taluka);
+            if (fb) {
+                donorLat = fb[0]; donorLng = fb[1];
+                document.getElementById('donorCoords').textContent = `~${donorLat.toFixed(4)}, ${donorLng.toFixed(4)}`;
+                document.getElementById('donorStatus').textContent = '⚠️ Approximate (area-level)';
+            }
+        }
+
+        placeDonorMarker();
+    } catch (e) {
+        showAlert('Could not load food details: ' + e.message, 'err');
+        document.getElementById('foodTitle').textContent = 'Unknown Food';
+    }
+}
+
+// ── Place donor marker ────────────────────────────────────────────────────────
+function placeDonorMarker() {
+    if (!donorLat || !donorLng) return;
+    if (donorMarker) donorMarker.remove();
+    donorMarker = L.marker([donorLat, donorLng], { icon: DONOR_ICON })
+        .addTo(map)
+        .bindPopup(`<b>🍽️ ${foodData ? foodData.title : 'Donor'}</b><br>
+            📍 ${foodData ? (foodData.pickup_address || foodData.area) : ''}<br>
+            📞 ${foodData ? (foodData.contact_person_phone || '') : ''}`)
+        .openPopup();
+    map.setView([donorLat, donorLng], 13);
+}
+
+// ── NGO live GPS tracking ─────────────────────────────────────────────────────
+function startNGOTracking() {
+    if (!navigator.geolocation) {
+        showAlert('GPS not supported on this device.', 'warn');
+        document.getElementById('ngoStatus').textContent = '❌ GPS not supported';
+        return;
+    }
+    showLoading('Getting your location...');
+
+    // First fix
+    navigator.geolocation.getCurrentPosition(onNGOLocation, onGPSError, {
+        enableHighAccuracy: true, timeout: 12000, maximumAge: 0
+    });
+
+    // Live watch — auto-update route if NGO moves
+    watchId = navigator.geolocation.watchPosition(onNGOLocation, onGPSError, {
+        enableHighAccuracy: true, timeout: 15000, maximumAge: 10000
+    });
+}
+
+function onNGOLocation(pos) {
+    ngoLat = pos.coords.latitude;
+    ngoLng = pos.coords.longitude;
+    const acc = Math.round(pos.coords.accuracy);
+
+    document.getElementById('ngoCoords').textContent = `${ngoLat.toFixed(5)}, ${ngoLng.toFixed(5)}`;
+    document.getElementById('ngoStatus').textContent  = `✅ Live GPS (±${acc}m)`;
+    document.getElementById('ngoStatus').className    = 'loc-status live';
+    document.getElementById('ngoName').textContent    = 'Your Current Location';
+
+    // Update NGO marker
+    if (ngoMarker) {
+        ngoMarker.setLatLng([ngoLat, ngoLng]);
+    } else {
+        ngoMarker = L.marker([ngoLat, ngoLng], { icon: NGO_ICON })
+            .addTo(map)
+            .bindPopup('<b>🏢 Your Location (NGO)</b><br>📡 Live GPS');
+    }
+
+    // Update Google Maps link
+    if (donorLat && donorLng) {
+        document.getElementById('btnGmaps').href =
+            `https://www.google.com/maps/dir/?api=1&origin=${ngoLat},${ngoLng}&destination=${donorLat},${donorLng}&travelmode=driving`;
+    }
+
+    drawRoute();
+}
+
+function onGPSError(err) {
+    hideLoading();
+    const msgs = { 1: 'GPS permission denied.', 2: 'GPS unavailable.', 3: 'GPS timeout.' };
+    document.getElementById('ngoStatus').textContent = '❌ ' + (msgs[err.code] || 'GPS error');
+    document.getElementById('ngoStatus').className = 'loc-status manual';
+
+    // Show manual location selector in sidebar
+    showManualLocationPicker();
+
+    // Still show donor marker
+    if (donorLat && donorLng) map.setView([donorLat, donorLng], 13);
+}
+
+function showManualLocationPicker() {
+    showAlert('GPS denied. Select your NGO location manually to draw route.', 'warn');
+
+    const html = `
+        <div style="padding:12px 16px; background:#fff8e1; border-bottom:1px solid #eee;">
+            <div style="font-size:0.82rem; font-weight:700; color:#e65100; margin-bottom:8px;">
+                📍 Select NGO by Taluka
+            </div>
+            <select id="manualTalukaSelect"
+                onchange="loadNGOsForTaluka()"
+                style="width:100%;padding:8px;border:2px solid #e65100;border-radius:8px;font-size:0.85rem;margin-bottom:8px;">
+                <option value="">-- Select Taluka --</option>
+                <option>Pandharpur</option>
+                <option>Barshi</option>
+                <option>Solapur City</option>
+                <option>North Solapur</option>
+                <option>South Solapur</option>
+                <option>Akkalkot</option>
+                <option>Karmala</option>
+                <option>Madha</option>
+                <option>Malshiras</option>
+                <option>Mangalvedhe</option>
+                <option>Mohol</option>
+                <option>Sangola</option>
+            </select>
+            <div id="ngoDropdownWrap" style="display:none; margin-bottom:8px;">
+                <select id="ngoContactSelect"
+                    onchange="onNGOContactSelect()"
+                    style="width:100%;padding:8px;border:2px solid #1565C0;border-radius:8px;font-size:0.85rem;">
+                    <option value="">-- Select NGO --</option>
+                </select>
+            </div>
+            <div id="ngoInfoBox" style="display:none; background:#e3f2fd; border-radius:8px; padding:10px; margin-bottom:8px; font-size:0.82rem; color:#1565C0;"></div>
+            <button onclick="useManualLocation()"
+                style="width:100%;padding:9px;background:#e65100;color:white;border:none;
+                border-radius:8px;cursor:pointer;font-weight:600;font-size:0.85rem;">
+                🗺️ Draw Route from This Location
+            </button>
+        </div>`;
+
+    const sidebar = document.querySelector('.sidebar');
+    const existing = document.getElementById('manualPicker');
+    if (existing) existing.remove();
+    const div = document.createElement('div');
+    div.id = 'manualPicker';
+    div.innerHTML = html;
+    sidebar.insertBefore(div, sidebar.children[1]);
+}
+
+let ngoContactsList = [];
+
+async function loadNGOsForTaluka() {
+    const taluka = document.getElementById('manualTalukaSelect').value;
+    if (!taluka) return;
+
+    try {
+        const res = await fetch('/api/ngo-contacts');
+        const data = await res.json();
+        // Show ALL active NGOs - no filter, let user pick
+        ngoContactsList = (data.contacts || []).filter(c => c.active);
+
+        const select = document.getElementById('ngoContactSelect');
+        select.innerHTML = '<option value="">-- Select NGO --</option>';
+
+        // First show NGOs matching taluka, then rest
+        const matching = ngoContactsList.filter(n =>
+            (n.taluka || '').toLowerCase() === taluka.toLowerCase() ||
+            (n.area || '').toLowerCase().includes(taluka.toLowerCase())
+        );
+        const others = ngoContactsList.filter(n => !matching.includes(n));
+
+        if (matching.length > 0) {
+            const grp1 = document.createElement('optgroup');
+            grp1.label = `📍 ${taluka} NGOs`;
+            matching.forEach(ngo => {
+                const opt = document.createElement('option');
+                opt.value = ngo.id;
+                opt.textContent = ngo.name;
+                grp1.appendChild(opt);
+            });
+            select.appendChild(grp1);
+        }
+
+        if (others.length > 0) {
+            const grp2 = document.createElement('optgroup');
+            grp2.label = 'Other NGOs';
+            others.forEach(ngo => {
+                const opt = document.createElement('option');
+                opt.value = ngo.id;
+                opt.textContent = `${ngo.name} (${ngo.taluka || ngo.area})`;
+                grp2.appendChild(opt);
+            });
+            select.appendChild(grp2);
+        }
+
+        document.getElementById('ngoDropdownWrap').style.display = 'block';
+        document.getElementById('ngoInfoBox').style.display = 'none';
+    } catch(e) {
+        showAlert('Could not load NGO list: ' + e.message, 'err');
+    }
+}
+
+function onNGOContactSelect() {
+    const id = parseInt(document.getElementById('ngoContactSelect').value);
+    const ngo = ngoContactsList.find(n => n.id === id);
+    if (!ngo) return;
+
+    // Get coords for NGO area/taluka
+    const coords = areaToCoords(ngo.area, ngo.taluka);
+    const infoBox = document.getElementById('ngoInfoBox');
+
+    infoBox.innerHTML = `
+        <strong>${ngo.name}</strong><br>
+        📍 ${ngo.area || ngo.taluka}<br>
+        📞 ${ngo.phone}
+        ${coords ? `<br><span style="color:#2e7d32;">✅ Location found</span>` : `<br><span style="color:#c62828;">⚠️ Approximate location</span>`}
+    `;
+    infoBox.style.display = 'block';
+
+    // Pre-set coords for route drawing
+    if (coords) {
+        ngoLat = coords[0];
+        ngoLng = coords[1];
+        document.getElementById('ngoCoords').textContent = `~${ngoLat.toFixed(4)}, ${ngoLng.toFixed(4)}`;
+        document.getElementById('ngoStatus').textContent = `📍 ${ngo.name}`;
+        document.getElementById('ngoName').textContent = ngo.name;
+    }
+}
+
+function useManualLocation() {
+    // Use pre-set coords from NGO contact selection, or fallback to taluka
+    if (!ngoLat || !ngoLng) {
+        const taluka = document.getElementById('manualTalukaSelect')?.value;
+        if (!taluka) { showAlert('Please select a taluka and NGO first.', 'warn'); return; }
+        const coords = AREA_COORDS[taluka];
+        if (!coords) { showAlert('Location not found for this taluka.', 'warn'); return; }
+        ngoLat = coords[0]; ngoLng = coords[1];
+    }
+
+    const ngoName = document.getElementById('ngoName').textContent || 'NGO';
+
+    document.getElementById('ngoCoords').textContent = `~${ngoLat.toFixed(4)}, ${ngoLng.toFixed(4)}`;
+    document.getElementById('ngoStatus').textContent  = `📍 ${ngoName}`;
+    document.getElementById('ngoStatus').className    = 'loc-status manual';
+
+    // Place NGO marker
+    if (ngoMarker) ngoMarker.remove();
+    ngoMarker = L.marker([ngoLat, ngoLng], { icon: NGO_ICON })
+        .addTo(map)
+        .bindPopup(`<b>🏢 ${ngoName}</b><br>📍 NGO Location`);
+
+    // Update Google Maps link
+    if (donorLat && donorLng) {
+        document.getElementById('btnGmaps').href =
+            `https://www.google.com/maps/dir/?api=1&origin=${ngoLat},${ngoLng}&destination=${donorLat},${donorLng}&travelmode=driving`;
+    }
+
+    // Remove picker and draw route
+    const picker = document.getElementById('manualPicker');
+    if (picker) picker.remove();
+    showAlert(`✅ NGO location set. Drawing route...`, 'ok');
+    drawRoute();
+}
+
+// ── Draw real road route via OSRM ─────────────────────────────────────────────
+function drawRoute() {
+    if (!ngoLat || !ngoLng || !donorLat || !donorLng) return;
+
+    showLoading('Calculating road route...');
+
+    // Remove old routing control
+    if (routingControl) { map.removeControl(routingControl); routingControl = null; }
+
+    routingControl = L.Routing.control({
+        waypoints: [
+            L.latLng(ngoLat, ngoLng),
+            L.latLng(donorLat, donorLng)
+        ],
+        router: L.Routing.osrmv1({
+            serviceUrl: 'https://router.project-osrm.org/route/v1',
+            profile: 'driving'
+        }),
+        createMarker: () => null,   // we manage markers ourselves
+        lineOptions: {
+            styles: [
+                { color: '#1565C0', weight: 9, opacity: 0.2 },
+                { color: '#4CAF50', weight: 6, opacity: 1   }
+            ],
+            extendToWaypoints: true,
+            missingRouteTolerance: 0
+        },
+        routeWhileDragging: false,
+        addWaypoints: false,
+        fitSelectedRoutes: true,
+        showAlternatives: false,
+        show: false                 // hide default panel — we render our own
+    }).addTo(map);
+
+    routingControl.on('routesfound', (e) => {
+        hideLoading();
+        const route   = e.routes[0];
+        const distKm  = (route.summary.totalDistance / 1000).toFixed(1);
+        const mins    = Math.round(route.summary.totalTime / 60);
+        const etaStr  = mins >= 60 ? `${Math.floor(mins/60)}h ${mins%60}m` : `${mins} min`;
+
+        document.getElementById('statDist').textContent = `${distKm} km`;
+        document.getElementById('statETA').textContent  = etaStr;
+
+        // Turn-by-turn steps
+        renderSteps(route.instructions);
+        showAlert(`✅ Route found: ${distKm} km · ${etaStr}`, 'ok');
+    });
+
+    routingControl.on('routingerror', () => {
+        hideLoading();
+        showAlert('⚠️ Road route unavailable. Showing straight-line path.', 'warn');
+        drawFallbackLine();
+    });
+}
+
+// ── Fallback straight line ────────────────────────────────────────────────────
+function drawFallbackLine() {
+    if (routingControl) { map.removeControl(routingControl); routingControl = null; }
+    L.polyline([[ngoLat, ngoLng], [donorLat, donorLng]], {
+        color: '#4CAF50', weight: 5, dashArray: '12, 8', opacity: 0.9
+    }).addTo(map);
+    map.fitBounds(L.latLngBounds([[ngoLat, ngoLng], [donorLat, donorLng]]), { padding: [60, 60] });
+
+    const R = 6371, dLat = (donorLat-ngoLat)*Math.PI/180, dLng = (donorLng-ngoLng)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(ngoLat*Math.PI/180)*Math.cos(donorLat*Math.PI/180)*Math.sin(dLng/2)**2;
+    const dist = (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1);
+    document.getElementById('statDist').textContent = `~${dist} km`;
+    document.getElementById('statETA').textContent  = `~${Math.round(dist/0.4)} min`;
+}
+
+// ── Render turn-by-turn steps ─────────────────────────────────────────────────
+function renderSteps(instructions) {
+    const section = document.getElementById('stepsSection');
+    const list    = document.getElementById('stepsList');
+    if (!instructions || instructions.length === 0) { section.style.display = 'none'; return; }
+
+    section.style.display = 'block';
+    list.innerHTML = instructions.map((step, i) => {
+        const dist = step.distance >= 1000
+            ? `${(step.distance/1000).toFixed(1)} km`
+            : `${Math.round(step.distance)} m`;
+        return `<li>
+            <span class="step-num">${i+1}</span>
+            <div>
+                <div>${step.text || step.instruction || ''}</div>
+                <div class="step-dist">${dist}</div>
+            </div>
+        </li>`;
+    }).join('');
+}
+
+// ── Refresh & recenter ────────────────────────────────────────────────────────
+function refreshRoute() {
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+    ngoLat = null; ngoLng = null;
+    if (ngoMarker) { ngoMarker.remove(); ngoMarker = null; }
+    document.getElementById('ngoStatus').textContent = '⏳ Relocating...';
+    startNGOTracking();
+}
+
+function recenterMap() {
+    if (ngoLat && donorLat) {
+        map.fitBounds(L.latLngBounds([[ngoLat, ngoLng], [donorLat, donorLng]]), { padding: [60, 60] });
+    } else if (donorLat) {
+        map.setView([donorLat, donorLng], 14);
+    } else if (ngoLat) {
+        map.setView([ngoLat, ngoLng], 14);
+    }
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+    initMap();
+    await loadFoodData();
+    startNGOTracking();
+});
+
+window.addEventListener('beforeunload', () => {
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+});
+</script>
+
+    <!-- Language Switcher -->
+    </body>
+</html>

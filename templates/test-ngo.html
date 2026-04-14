@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO Dashboard - Solapur Food Share</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        /* Dynamic Background */
+        .page-bg-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .page-bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            filter: blur(3px);
+        }
+        .page-bg.active { opacity: 1; }
+        .page-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+
+        body { 
+            font-family: Arial, sans-serif; 
+            background: transparent;
+            padding: 20px; 
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        .page-bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .page-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-color: #999;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            filter: blur(3px);
+        }
+        .page-bg.active {
+            opacity: 1;
+        }
+        .page-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Smooth Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .login-box, .card, .content-wrapper {
+            background: rgba(0, 0, 0, 0.55) !important;
+            backdrop-filter: blur(15px) !important;
+            -webkit-backdrop-filter: blur(15px) !important;
+            border: 1px solid rgba(255,255,255,0.15) !important;
+            border-radius: 15px !important;
+            color: white !important;
+        }
+        .login-box input, .card input {
+            background: rgba(255,255,255,0.1) !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            color: white !important;
+        }
+        .login-box input::placeholder {
+            color: rgba(255,255,255,0.5) !important;
+        }
+        .login-box h3, .card h3 {
+            color: white !important;
+        }
+        h1 { color: #4CAF50; margin-bottom: 10px; }
+        .subtitle { color: rgba(255,255,255,0.8); margin-bottom: 30px; }
+        .login-box { 
+            background: rgba(0, 0, 0, 0.55); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 20px; 
+            border-radius: 10px; 
+            margin-bottom: 30px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            animation: fadeInUp 0.6s ease-out;
+        }
+        .food-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
+        .food-card { 
+            background: rgba(0, 0, 0, 0.55); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 30px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .food-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(180deg, #4CAF50, #45a049);
+        }
+        .food-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(76, 175, 80, 0.15);
+            border-color: #4CAF50;
+        }
+        .food-card h3 { 
+            color: #4CAF50; 
+            margin-bottom: 20px; 
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .food-card p { margin: 8px 0; color: rgba(255,255,255,0.85); font-size: 15px; }
+        .food-card .status { 
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px; 
+            border-radius: 25px; 
+            font-size: 13px; 
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status::before {
+            content: '';
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .status.available { 
+            background: linear-gradient(135deg, #d4edda, #c3e6cb); 
+            color: #155724; 
+            border: 2px solid #28a745;
+        }
+        .status.available::before {
+            background: #28a745;
+        }
+        .status.claimed { 
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7); 
+            color: #856404; 
+            border: 2px solid #ffc107;
+        }
+        .status.claimed::before {
+            background: #ffc107;
+        }
+        .status.picked_up { 
+            background: linear-gradient(135deg, #d1ecf1, #bee5eb); 
+            color: #0c5460; 
+            border: 2px solid #17a2b8;
+        }
+        .status.picked_up::before {
+            background: #17a2b8;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+        button { 
+            background: #4CAF50; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin-top: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        button:hover { 
+            background: #45a049;
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+        button:active {
+            transform: translateY(0) scale(0.98);
+        }
+        button.claim { 
+            background: #2196F3;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+        button.claim:hover {
+            background: #1976D2;
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+        }
+        button.verify { 
+            background: #FF9800;
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+        }
+        button.verify:hover {
+            background: #F57C00;
+            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+        }
+        input { width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,0.3); border-radius: 5px; margin-bottom: 10px; background: rgba(255,255,255,0.1); color: white; }
+        .alert { padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+        .empty { text-align: center; padding: 40px; color: #999; }
+        
+        /* Notification Bell Styles */
+        .notification-bell {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        .bell-icon {
+            position: relative;
+            background: #4CAF50;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        .bell-icon:hover {
+            background: #45a049;
+            transform: scale(1.1);
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #f44336;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            border: 2px solid white;
+        }
+        .notification-panel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 400px;
+            max-height: 500px;
+            background: rgba(0, 0, 0, 0.55);
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            display: none;
+            overflow: hidden;
+            z-index: 999;
+        }
+        .notification-panel.show {
+            display: block;
+        }
+        .notification-header {
+            background: #4CAF50;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .notification-header h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+        .mark-all-read {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .mark-all-read:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .notification-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .notification-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .notification-item:hover {
+            background: #f9f9f9;
+        }
+        .notification-item.unread {
+            background: #e8f5e9;
+        }
+        .notification-item.unread:hover {
+            background: #d4edda;
+        }
+        .notification-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .notification-message {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .notification-time {
+            color: #999;
+            font-size: 12px;
+        }
+        .notification-empty {
+            padding: 40px;
+            text-align: center;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <!-- Full Page Background -->
+        <div class="page-bg-container">
+        <div class="page-bg active" style="background-image: url('https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1593113646773-028c64a8f1b8?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1509099863731-ef4bff19e808?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=1920&q=90');"></div>
+        <div class="page-overlay"></div>
+    </div>
+
+    <!-- Notification Bell -->
+    <div class="notification-bell" id="notificationBell" style="display: none;">
+        <div class="bell-icon" onclick="toggleNotifications()">
+            🔔
+            <span class="notification-badge" id="notificationBadge" style="display: none;">0</span>
+        </div>
+    </div>
+
+    <!-- Notification Panel -->
+    <div class="notification-panel" id="notificationPanel">
+        <div class="notification-header">
+            <h3>🔔 Notifications</h3>
+            <button class="mark-all-read" onclick="markAllAsRead()">Mark all as read</button>
+        </div>
+        <div class="notification-list" id="notificationList">
+            <div class="notification-empty">No notifications yet</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>🏢 NGO Dashboard</h1>
+        <p class="subtitle">View and claim available food in your area</p>
+        
+        <div class="login-box">
+            <h3 style="color:white;">Enter Your Email (NGO Account)</h3>
+            <input type="email" id="ngoEmail" placeholder="your-ngo@email.com">
+            <button onclick="loadFood()" style="margin-top: 10px; width: 100%;">Load Food in My Area</button>
+        </div>
+        
+        <div id="alertBox"></div>
+        
+        <div id="foodContainer">
+            <div class="empty">👆 Enter your NGO email above to see available food</div>
+        </div>
+        
+        <div id="claimedContainer" style="display: none;"></div>
+    </div>
+
+    <script>
+        // NETWORK ENCRYPTION FUNCTIONS
+        function encryptData(data) {
+            // Simple encryption for demonstration (in production, use proper encryption libraries)
+            const encrypted = btoa(JSON.stringify(data));
+            return encrypted;
+        }
+        
+        function decryptData(encryptedData) {
+            // Simple decryption for demonstration (in production, use proper decryption libraries)
+            try {
+                const decrypted = atob(encryptedData);
+                return JSON.parse(decrypted);
+            } catch (error) {
+                console.error('Decryption error:', error);
+                return null;
+            }
+        }
+        
+        function generateEncryptionKey() {
+            // Generate a simple encryption key (in production, use proper key generation)
+            const key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('encryptionKey', key);
+            return key;
+        }
+        
+        function getEncryptionKey() {
+            let key = localStorage.getItem('encryptionKey');
+            if (!key) {
+                key = generateEncryptionKey();
+            }
+            return key;
+        }
+        
+        function secureEncrypt(data) {
+            const key = getEncryptionKey();
+            const dataWithKey = {
+                data: data,
+                key: key,
+                timestamp: Date.now()
+            };
+            return encryptData(dataWithKey);
+        }
+
+        // ENCRYPTION STATUS CHECK
+        function checkConnectionSecurity() {
+            const isSecure = window.location.protocol === 'https:';
+            console.log('🔒 Connection Security Check:', {
+                protocol: window.location.protocol,
+                isSecure: isSecure,
+                encryption: 'Client-Side Data Encryption Active'
+            });
+        }
+
+        // Initialize encryption
+        checkConnectionSecurity();
+        console.log('🔐 Network Encryption Initialized for NGO Dashboard');
+
+        let currentNGO = null;
+        let notificationInterval = null;
+        let currentTab = 'available';
+
+        // AI Helper Functions
+        function getPriorityColor(priority) {
+            switch(priority.toLowerCase()) {
+                case 'high priority': return '#F44336';
+                case 'medium priority': return '#FF9800';
+                case 'low priority': return '#4CAF50';
+                case 'very low priority': return '#9E9E9E';
+                default: return '#666';
+            }
+        }
+
+        function getPriorityIcon(priority) {
+            switch(priority.toLowerCase()) {
+                case 'high priority': return '🔴';
+                case 'medium priority': return '🟡';
+                case 'low priority': return '🟢';
+                case 'very low priority': return '⚪';
+                default: return '🔵';
+            }
+        }
+
+        function getDestinationColor(destination) {
+            switch(destination.toLowerCase()) {
+                case 'humans': return '#4CAF50';
+                case 'animals': return '#FF9800';
+                case 'compost/waste': return '#F44336';
+                default: return '#666';
+            }
+        }
+
+        function getDestinationIcon(destination) {
+            switch(destination.toLowerCase()) {
+                case 'humans': return '👥';
+                case 'animals': return '🐕';
+                case 'compost/waste': return '🗑️';
+                default: return '❓';
+            }
+        }
+
+        function getTimeStatusColor(status) {
+            switch(status.toLowerCase()) {
+                case 'safe for humans': return '#4CAF50';
+                case 'safe for animals only': return '#FF9800';
+                case 'expiring soon': return '#F44336';
+                default: return '#666';
+            }
+        }
+
+        // Countdown Timer Functions
+        function getCountdownColor(expiryTime) {
+            const now = new Date();
+            const expiry = new Date(expiryTime);
+            const diffMs = expiry - now;
+            const diffHours = diffMs / (1000 * 60 * 60);
+            
+            if (diffHours < 0) return '#F44336'; // Red - Expired
+            if (diffHours < 2) return '#FF5722'; // Deep Orange - Critical
+            if (diffHours < 4) return '#FF9800'; // Orange - Urgent
+            if (diffHours < 8) return '#FFC107'; // Amber - Soon
+            return '#4CAF50'; // Green - Safe
+        }
+
+        function formatCountdown(expiryTime) {
+            const now = new Date();
+            const expiry = new Date(expiryTime);
+            const diffMs = expiry - now;
+            
+            if (diffMs < 0) {
+                return '🔴 EXPIRED';
+            }
+            
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            const diffSeconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+            
+            if (diffDays > 0) {
+                return `🟢 ${diffDays}d ${diffHours}h ${diffMinutes}m`;
+            } else if (diffHours > 0) {
+                if (diffHours < 2) {
+                    return `🔴 ${diffHours}h ${diffMinutes}m ${diffSeconds}s`;
+                } else if (diffHours < 4) {
+                    return `🟡 ${diffHours}h ${diffMinutes}m ${diffSeconds}s`;
+                } else {
+                    return `🟢 ${diffHours}h ${diffMinutes}m ${diffSeconds}s`;
+                }
+            } else if (diffMinutes > 0) {
+                return `🔴 ${diffMinutes}m ${diffSeconds}s`;
+            } else {
+                return `🔴 ${diffSeconds}s`;
+            }
+        }
+
+        function startCountdownTimers() {
+            // Start countdown for all food items
+            const countdownElements = document.querySelectorAll('[id^="countdown-"]');
+            
+            countdownElements.forEach(element => {
+                const foodId = element.id.replace('countdown-', '');
+                // We need to get the expiry time from the food data
+                // This will be updated when food is loaded
+            });
+        }
+
+        function updateCountdown(foodId, expiryTime) {
+            const element = document.getElementById(`countdown-${foodId}`);
+            if (!element) return;
+            
+            const updateDisplay = () => {
+                element.textContent = formatCountdown(expiryTime);
+                element.style.color = getCountdownColor(expiryTime);
+            };
+            
+            // Update immediately
+            updateDisplay();
+            
+            // Update every second
+            setInterval(updateDisplay, 1000);
+        }
+
+        // Container-Based Safety Prediction
+        function getContainerSafety(containerType, expiryTime) {
+            if (!containerType || !expiryTime) return null;
+            
+            // Container safety time mapping (in hours)
+            const containerSafetyTimes = {
+                'plastic': { min: 2, max: 4 },
+                'steel': { min: 4, max: 6 },
+                'glass': { min: 4, max: 6 },
+                'aluminum': { min: 3, max: 5 },
+                'paper': { min: 1, max: 2 },
+                'thermocol': { min: 1, max: 2 },
+                'other': { min: 2, max: 4 }
+            };
+            
+            const safetyTime = containerSafetyTimes[containerType] || containerSafetyTimes['other'];
+            const expiry = new Date(expiryTime);
+            const now = new Date();
+            const remainingHours = Math.max(0, (expiry - now) / (1000 * 60 * 60));
+            
+            let status, statusColor, statusIcon, statusText;
+            
+            if (remainingHours >= safetyTime.min) {
+                status = 'safe-humans';
+                statusColor = '#4CAF50';
+                statusIcon = 'fa-check-circle';
+                statusText = 'Safe for Humans';
+            } else if (remainingHours > 0) {
+                status = 'safe-animals';
+                statusColor = '#FF9800';
+                statusIcon = 'fa-exclamation-triangle';
+                statusText = 'Safe only for Animals';
+            } else {
+                status = 'not-safe';
+                statusColor = '#F44336';
+                statusIcon = 'fa-times-circle';
+                statusText = 'Not Safe';
+            }
+            
+            return {
+                status: status,
+                color: statusColor,
+                icon: statusIcon,
+                text: statusText,
+                remainingHours: Math.floor(remainingHours),
+                safetyWindow: `${safetyTime.min}-${safetyTime.max} hours`
+            };
+        }
+
+        function displayContainerSafety(containerType, expiryTime) {
+            const safety = getContainerSafety(containerType, expiryTime);
+            if (!safety) return '';
+            
+            return `
+                <div style="background: ${safety.color}20; border-left: 4px solid ${safety.color}; padding: 10px; margin: 10px 0; border-radius: 5px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                        <i class="fas ${safety.icon}" style="color: ${safety.color};"></i>
+                        <strong style="color: ${safety.color};">${safety.text}</strong>
+                    </div>
+                    <div style="font-size: 12px; color: #666;">
+                        Container: ${containerType.charAt(0).toUpperCase() + containerType.slice(1)} | 
+                        Safety Window: ${safety.safetyWindow} | 
+                        Time Left: ${safety.remainingHours}h
+                    </div>
+                </div>
+            `;
+        }
+
+        // AI Summary Display Function
+        function showAISummary(foods) {
+            if (!foods || foods.length === 0) return;
+            
+            const aiSummaryBox = document.getElementById('aiSummaryBox');
+            const aiStats = document.getElementById('aiStats');
+            const aiRecommendations = document.getElementById('aiRecommendations');
+            
+            // Count recommendations
+            let humansCount = 0, animalsCount = 0, wasteCount = 0;
+            let highPriorityCount = 0, mediumPriorityCount = 0, lowPriorityCount = 0;
+            let totalConfidence = 0, validConfidenceCount = 0;
+            
+            foods.forEach(food => {
+                if (food.ai_recommendation) {
+                    const dest = food.ai_recommendation.destination.toLowerCase();
+                    const priority = food.ai_recommendation.priority.toLowerCase();
+                    
+                    if (dest === 'humans') humansCount++;
+                    else if (dest === 'animals') animalsCount++;
+                    else if (dest === 'compost/waste') wasteCount++;
+                    
+                    if (priority.includes('high')) highPriorityCount++;
+                    else if (priority.includes('medium')) mediumPriorityCount++;
+                    else if (priority.includes('low')) lowPriorityCount++;
+                    
+                    if (food.ai_recommendation.confidence) {
+                        totalConfidence += food.ai_recommendation.confidence;
+                        validConfidenceCount++;
+                    }
+                }
+            });
+            
+            const avgConfidence = validConfidenceCount > 0 ? (totalConfidence / validConfidenceCount * 100).toFixed(1) : 0;
+            
+            // Update AI Stats
+            aiStats.innerHTML = `
+                <div style="background: white; padding: 15px; border-radius: 10px; text-align: center; border-left: 4px solid #4CAF50;">
+                    <div style="font-size: 24px; margin-bottom: 5px;">👥</div>
+                    <div style="font-size: 20px; font-weight: bold; color: #4CAF50;">${humansCount}</div>
+                    <div style="font-size: 12px; color: #666;">For Humans</div>
+                </div>
+                
+                <div style="background: white; padding: 15px; border-radius: 10px; text-align: center; border-left: 4px solid #FF9800;">
+                    <div style="font-size: 24px; margin-bottom: 5px;">🐕</div>
+                    <div style="font-size: 20px; font-weight: bold; color: #FF9800;">${animalsCount}</div>
+                    <div style="font-size: 12px; color: #666;">For Animals</div>
+                </div>
+                
+                <div style="background: white; padding: 15px; border-radius: 10px; text-align: center; border-left: 4px solid #F44336;">
+                    <div style="font-size: 24px; margin-bottom: 5px;">🗑️</div>
+                    <div style="font-size: 20px; font-weight: bold; color: #F44336;">${wasteCount}</div>
+                    <div style="font-size: 12px; color: #666;">For Compost</div>
+                </div>
+                
+                <div style="background: white; padding: 15px; border-radius: 10px; text-align: center; border-left: 4px solid #2196F3;">
+                    <div style="font-size: 24px; margin-bottom: 5px;">📊</div>
+                    <div style="font-size: 20px; font-weight: bold; color: #2196F3;">${avgConfidence}%</div>
+                    <div style="font-size: 12px; color: #666;">Avg Confidence</div>
+                </div>
+            `;
+            
+            // Update Priority Breakdown
+            aiRecommendations.innerHTML = `
+                <div style="background: #FFEBEE; padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 20px;">🔴</div>
+                    <div style="font-size: 18px; font-weight: bold; color: #F44336;">${highPriorityCount}</div>
+                    <div style="font-size: 12px; color: #666;">High Priority</div>
+                </div>
+                
+                <div style="background: #FFF3E0; padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 20px;">🟡</div>
+                    <div style="font-size: 18px; font-weight: bold; color: #FF9800;">${mediumPriorityCount}</div>
+                    <div style="font-size: 12px; color: #666;">Medium Priority</div>
+                </div>
+                
+                <div style="background: #E8F5E9; padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 20px;">🟢</div>
+                    <div style="font-size: 18px; font-weight: bold; color: #4CAF50;">${lowPriorityCount}</div>
+                    <div style="font-size: 12px; color: #666;">Low Priority</div>
+                </div>
+            `;
+            
+            // Show AI Summary Box
+            aiSummaryBox.style.display = 'block';
+        }
+
+        async function loadFood() {
+            const email = document.getElementById('ngoEmail').value;
+            if (!email) {
+                alert('Please enter your email');
+                return;
+            }
+
+            const alertBox = document.getElementById('alertBox');
+            const container = document.getElementById('foodContainer');
+
+            try {
+                // Get NGO details
+                const ngoResponse = await fetch('/api/user/by-email?email=' + encodeURIComponent(email));
+                const ngoData = await ngoResponse.json();
+
+                if (!ngoResponse.ok) {
+                    alertBox.className = 'alert alert-error';
+                    alertBox.innerHTML = '❌ NGO not found. Please register first.';
+                    return;
+                }
+
+                currentNGO = ngoData;
+
+                if (currentNGO.user_type !== 'ngo') {
+                    alertBox.className = 'alert alert-error';
+                    alertBox.innerHTML = '❌ This email is registered as Donor, not NGO.';
+                    return;
+                }
+
+                // Show notification bell
+                document.getElementById('notificationBell').style.display = 'block';
+
+                // Start loading notifications
+                loadNotifications();
+
+                // Auto-refresh notifications every 30 seconds
+                if (notificationInterval) clearInterval(notificationInterval);
+                notificationInterval = setInterval(loadNotifications, 30000);
+
+                // Get food from NGO's taluka or area (fallback to area if taluka is null)
+                const searchArea = currentNGO.taluka || currentNGO.area;
+                const timestamp = new Date().getTime(); // Cache busting
+                const foodResponse = await fetch('/api/food/available-in-area?area=' + encodeURIComponent(searchArea) + '&t=' + timestamp);
+                const foodData = await foodResponse.json();
+
+                if (!foodResponse.ok) {
+                    alertBox.className = 'alert alert-error';
+                    alertBox.innerHTML = '❌ Error loading food';
+                    return;
+                }
+
+                alertBox.className = 'alert alert-success';
+                alertBox.innerHTML = `✅ Logged in as: ${currentNGO.name} | Showing food from ${currentNGO.taluka || currentNGO.area}`;
+
+                // Display food grouped by TALUKA only
+                if (foodData.foods.length === 0) {
+                    container.innerHTML = '<div class="empty">😔 No food available in your area yet</div>';
+                } else {
+                    // Group food by taluka first, then area as fallback
+                    const grouped = {};
+                    foodData.foods.forEach(food => {
+                        const key = food.taluka || food.area || 'Unknown Location';
+                        if (!grouped[key]) {
+                            grouped[key] = [];
+                        }
+                        grouped[key].push(food);
+                    });
+
+                    // Create HTML with grouped sections
+                    let html = '';
+                    let globalIndex = 0;
+                    Object.keys(grouped).sort().forEach(location => {
+                        html += `
+                            <div style="margin-bottom: 40px;">
+                                <h2 style="background: linear-gradient(135deg, #4CAF50, #45a049); color: white; padding: 15px 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); display: flex; align-items: center; gap: 10px;">
+                                    📍 ${location}
+                                    <span style="background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px; font-size: 14px; margin-left: auto;">
+                                        ${grouped[location].length} items
+                                    </span>
+                                </h2>
+                                <div class="food-grid">
+                                    ${grouped[location].map(food => createFoodCard(food, globalIndex++)).join('')}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    container.innerHTML = html;
+                    
+                    // Start countdown timers for all food items
+                    setTimeout(() => {
+                        foodData.foods.forEach(food => {
+                            updateCountdown(food.id, food.expiry_time);
+                        });
+                    }, 100);
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alertBox.className = 'alert alert-error';
+                alertBox.innerHTML = '❌ Network error: ' + error.message;
+            }
+        }
+
+        async function loadClaimedFood() {
+            if (!currentNGO) {
+                alert('Please login first');
+                return;
+            }
+
+            const container = document.getElementById('claimedContainer');
+            
+            try {
+                const response = await fetch('/api/ngo/my-claims?email=' + encodeURIComponent(currentNGO.email));
+                const data = await response.json();
+
+                if (!response.ok) {
+                    container.innerHTML = '<div class="empty">❌ Error loading claimed food</div>';
+                    return;
+                }
+
+                if (data.claims.length === 0) {
+                    container.innerHTML = '<div class="empty">📦 You haven\'t claimed any food yet</div>';
+                } else {
+                    container.innerHTML = '<div class="food-grid">' + 
+                        data.claims.map((food, index) => createFoodCard(food, index)).join('') + 
+                        '</div>';
+                    
+                    // Start countdown timers for claimed food items
+                    setTimeout(() => {
+                        data.claims.forEach(food => {
+                            updateCountdown(food.id, food.expiry_time);
+                        });
+                    }, 100);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                container.innerHTML = '<div class="empty">❌ Network error: ' + error.message + '</div>';
+            }
+        }
+
+        function createFoodCard(food, index = 0) {
+            const expiry = new Date(food.expiry_time).toLocaleString();
+            const created = new Date(food.created_at).toLocaleString();
+            
+            // Status display with emojis
+            let statusDisplay = '';
+            let statusEmoji = '';
+            switch(food.status) {
+                case 'available':
+                    statusDisplay = '🟢 AVAILABLE';
+                    statusEmoji = '🟢';
+                    break;
+                case 'claimed':
+                    statusDisplay = '🟡 CLAIMED';
+                    statusEmoji = '🟡';
+                    break;
+                case 'picked_up':
+                    statusDisplay = '🔵 PICKED UP';
+                    statusEmoji = '🔵';
+                    break;
+                default:
+                    statusDisplay = food.status.toUpperCase();
+            }
+            
+            // Location display - show taluka and area
+            let locationDisplay = '';
+            if (food.taluka && food.area) {
+                locationDisplay = `📍 ${food.taluka} → ${food.area}`;
+            } else if (food.area) {
+                locationDisplay = `📍 ${food.area}`;
+            } else {
+                locationDisplay = '📍 Location not specified';
+            }
+            
+            return `
+                <div class="food-card fade-in-up" style="animation-delay: ${index * 0.1}s;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">${statusEmoji} ${food.title}</h3>
+                        <span class="status ${food.status}">${statusDisplay}</span>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #FF9800, #F57C00); color: white; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);">
+                        ${locationDisplay}
+                    </div>
+                    <p><strong>📝 Description:</strong> ${food.description}</p>
+                    <p><strong>🍽️ Type:</strong> ${food.food_type}</p>
+                    <p><strong>📦 Quantity:</strong> ${food.quantity}</p>
+                    <p><strong>🥡 Container:</strong> ${food.container_type ? food.container_type.charAt(0).toUpperCase() + food.container_type.slice(1) : 'Unknown'}</p>
+                    <p><strong>⏰ Expiry:</strong> 
+                        <span id="countdown-${food.id}" style="color: ${getCountdownColor(food.expiry_time)}; font-weight: bold; font-size: 14px;">
+                            Loading...
+                        </span>
+                    </p>
+                    <p style="font-size: 12px; color: #999;">📅 Full expiry: ${expiry}</p>
+                    <p><strong>📞 Contact:</strong> ${food.contact_person_name || 'N/A'} - ${food.contact_person_phone || 'N/A'}</p>
+                    <p><strong>👤 Donor:</strong> ${food.donor ? food.donor.name : 'Unknown'}</p>
+                    <p><strong>🔑 Pickup Code:</strong> <strong style="font-size: 24px; color: #4CAF50; letter-spacing: 2px;">${food.pickup_code}</strong></p>
+                    
+                    <!-- Container Safety Prediction -->
+                    ${displayContainerSafety(food.container_type, food.expiry_time)}
+                    
+                    <!-- AI Recommendation -->
+                    ${food.ai_recommendation ? `
+                        <div style="background: linear-gradient(135deg, #E8F5E8, #C8E6C9); border: 2px solid #4CAF50; border-radius: 10px; padding: 12px; margin: 10px 0;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <span style="font-size: 20px;">🤖</span>
+                                <h4 style="margin: 0; color: #2E7D32; font-size: 14px;">AI Recommendation</h4>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+                                <div>
+                                    <strong style="color: ${getDestinationColor(food.ai_recommendation.destination)};">
+                                        ${getDestinationIcon(food.ai_recommendation.destination)} ${food.ai_recommendation.destination}
+                                    </strong>
+                                </div>
+                                <div>
+                                    <strong style="color: ${getPriorityColor(food.ai_recommendation.priority)};">
+                                        ${getPriorityIcon(food.ai_recommendation.priority)} ${food.ai_recommendation.priority}
+                                    </strong>
+                                </div>
+                            </div>
+                            <p style="margin: 5px 0; font-size: 11px; color: #666; font-style: italic;">
+                                ${food.ai_recommendation.action_needed}
+                            </p>
+                            
+                            <!-- Timeline Information -->
+                            ${food.ai_recommendation.timeline ? `
+                                <div style="background: #F0F8FF; padding: 8px; border-radius: 6px; margin: 8px 0; border-left: 3px solid #2196F3;">
+                                    <h5 style="margin: 0 0 5px 0; color: #1976D2; font-size: 11px; font-weight: bold;">⏰ Safety Timeline</h5>
+                                    <div style="font-size: 10px; line-height: 1.4;">
+                                        <div style="display: flex; justify-content: space-between; margin: 2px 0;">
+                                            <span>👥 Safe for Humans:</span>
+                                            <strong style="color: #4CAF50;">${food.ai_recommendation.timeline.human_safe_hours}h</strong>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; margin: 2px 0;">
+                                            <span>🐕 Safe for Animals:</span>
+                                            <strong style="color: #FF9800;">${food.ai_recommendation.timeline.animal_safe_hours}h</strong>
+                                        </div>
+                                        <div style="margin: 3px 0; padding: 2px 4px; background: ${getTimeStatusColor(food.ai_recommendation.timeline.time_status)}; color: white; border-radius: 3px; text-align: center; font-size: 9px; font-weight: bold;">
+                                            ${food.ai_recommendation.timeline.time_status}
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            <div style="background: #E0E0E0; height: 4px; border-radius: 2px; margin: 5px 0;">
+                                <div style="background: #4CAF50; height: 100%; border-radius: 2px; width: ${food.ai_recommendation.confidence * 100}%;"></div>
+                            </div>
+                            <p style="margin: 0; font-size: 10px; color: #999;">
+                                Confidence: ${(food.ai_recommendation.confidence * 100).toFixed(0)}%
+                            </p>
+                        </div>
+                    ` : ''}
+                    
+                    <p style="font-size: 12px; color: #999; margin-top: 10px;">📅 Posted: ${created}</p>
+                    ${food.status === 'available' ? 
+                        `<button class="claim" onclick="claimFood(${food.id})">🎯 Claim This Food</button>` : 
+                        food.status === 'claimed' && food.claimed_by === currentNGO.id ?
+                        `<button class="verify" onclick="verifyPickup('${food.pickup_code}')">✅ Verify Pickup</button>` :
+                        '<p style="color: #999; margin-top: 15px;">Already claimed by another NGO</p>'
+                    }
+                </div>
+            `;
+        }
+
+        async function claimFood(foodId) {
+            if (!currentNGO) {
+                alert('Please login first');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to claim this food?')) {
+                return;
+            }
+
+            try {
+                // Encrypt data before sending over network
+                const claimData = {
+                    food_id: foodId,
+                    ngo_email: currentNGO.email,
+                    encrypted: true,
+                    timestamp: Date.now()
+                };
+                
+                console.log('🔐 Original Claim Data:', claimData);
+                
+                const encryptedData = secureEncrypt(claimData);
+                
+                console.log('🔒 Encrypted Claim Data:', encryptedData);
+                console.log('🔑 Claim Encryption Key:', getEncryptionKey());
+
+                const response = await fetch('/api/food/claim-test', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Encryption-Key': getEncryptionKey(),
+                        'X-Data-Encrypted': 'true'
+                    },
+                    body: encryptedData
+                });
+
+                console.log('📡 Claim Network Request Headers:', {
+                    'Content-Type': 'application/json',
+                    'X-Encryption-Key': getEncryptionKey(),
+                    'X-Data-Encrypted': 'true'
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Food claimed successfully!\n\nPickup Code: ' + result.food.pickup_code);
+                    loadFood(); // Reload
+                } else {
+                    alert('❌ Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('❌ Network error: ' + error.message);
+            }
+        }
+
+        async function verifyPickup(pickupCode) {
+            if (!currentNGO) {
+                alert('Please login first');
+                return;
+            }
+
+            const enteredCode = prompt('Enter the pickup code from donor:');
+            if (!enteredCode) return;
+
+            if (enteredCode !== pickupCode) {
+                alert('❌ Invalid pickup code!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/food/verify-test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        pickup_code: pickupCode,
+                        ngo_email: currentNGO.email
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Pickup verified successfully!\n\nThank you for helping reduce food waste!');
+                    loadFood(); // Reload
+                } else {
+                    alert('❌ Error: ' + result.message);
+                }
+            } catch (error) {
+                alert('❌ Network error: ' + error.message);
+            }
+        }
+
+        async function loadNotifications() {
+            if (!currentNGO) return;
+
+            console.log('🔔 Loading notifications for:', currentNGO.email);
+
+            try {
+                const response = await fetch('/api/notifications?email=' + encodeURIComponent(currentNGO.email));
+                const data = await response.json();
+
+                console.log('📡 Notification API response:', data);
+
+                if (response.ok) {
+                    updateNotificationUI(data.notifications, data.unread_count);
+                } else {
+                    console.error('❌ Notification API error:', data);
+                }
+            } catch (error) {
+                console.error('❌ Error loading notifications:', error);
+            }
+        }
+
+        function updateNotificationUI(notifications, unreadCount) {
+            console.log('🔄 Updating notification UI:', { notifications: notifications.length, unreadCount });
+            
+            const badge = document.getElementById('notificationBadge');
+            const list = document.getElementById('notificationList');
+
+            // Update badge
+            if (unreadCount > 0) {
+                console.log('✅ Showing badge with count:', unreadCount);
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.style.display = 'flex';
+            } else {
+                console.log('❌ Hiding badge - no unread notifications');
+                badge.style.display = 'none';
+            }
+
+            // Update notification list
+            if (notifications.length === 0) {
+                list.innerHTML = '<div class="notification-empty">No notifications yet</div>';
+            } else {
+                list.innerHTML = notifications.map(notif => createNotificationItem(notif)).join('');
+            }
+        }
+
+        function createNotificationItem(notif) {
+            const time = new Date(notif.created_at).toLocaleString();
+            const unreadClass = notif.is_read ? '' : 'unread';
+            
+            return `
+                <div class="notification-item ${unreadClass}" onclick="markAsRead(${notif.id})">
+                    <div class="notification-title">${notif.title}</div>
+                    <div class="notification-message">${notif.message}</div>
+                    <div class="notification-time">${time}</div>
+                </div>
+            `;
+        }
+
+        function toggleNotifications() {
+            const panel = document.getElementById('notificationPanel');
+            panel.classList.toggle('show');
+        }
+
+        async function markAsRead(notificationId) {
+            try {
+                await fetch('/api/notifications/mark-read', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ notification_id: notificationId })
+                });
+                
+                // Reload notifications
+                loadNotifications();
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
+
+        async function markAllAsRead() {
+            if (!currentNGO) return;
+
+            try {
+                await fetch('/api/notifications/mark-all-read', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: currentNGO.email })
+                });
+                
+                // Reload notifications
+                loadNotifications();
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+            }
+        }
+
+        // Close notification panel when clicking outside
+        document.addEventListener('click', function(event) {
+            const panel = document.getElementById('notificationPanel');
+            const bell = document.getElementById('notificationBell');
+            
+            if (!panel.contains(event.target) && !bell.contains(event.target)) {
+                panel.classList.remove('show');
+            }
+        });
+    </script>
+    
+    <script>
+        // Full page background image rotation
+        let bgIndex = 0;
+        const bgImages = document.querySelectorAll('.page-bg');
+        
+        setInterval(() => {
+            bgImages[bgIndex].classList.remove('active');
+            bgIndex = (bgIndex + 1) % bgImages.length;
+            bgImages[bgIndex].classList.add('active');
+        }, 5000); // Change every 5 seconds
+    </script>
+</body>
+</html>

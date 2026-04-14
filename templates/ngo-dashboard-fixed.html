@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Food - Solapur Food Share</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        .page-bg-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .page-bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            filter: blur(4px) brightness(0.7);
+        }
+        .page-bg.active { opacity: 1; }
+        .page-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.55);
+        }
+
+        /* ── Main Container ── */
+        .container { 
+            max-width: 1200px; 
+            margin: 30px auto;
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #f0f0f0;
+            padding: 35px; 
+            border-radius: 20px;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        h1 { 
+            color: #fff; 
+            margin-bottom: 25px; 
+            text-align: center;
+            font-size: 1.8rem;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Buttons ── */
+        button { 
+            background: rgba(255,255,255,0.15);
+            color: white; 
+            padding: 12px 30px; 
+            border: 1px solid rgba(255,255,255,0.3); 
+            border-radius: 10px; 
+            cursor: pointer; 
+            font-size: 15px; 
+            font-weight: 600;
+            width: 100%; 
+            transition: all 0.3s;
+            backdrop-filter: blur(8px);
+        }
+        button:hover { 
+            background: rgba(255,255,255,0.28); 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.6);
+        }
+
+        /* ── Alerts ── */
+        .alert { padding: 14px 18px; margin: 15px 0; border-radius: 10px; font-weight: 500; }
+        .alert-success { 
+            background: rgba(76, 175, 80, 0.2); 
+            color: #a5d6a7; 
+            border: 1px solid rgba(76,175,80,0.4); 
+        }
+        .alert-error { 
+            background: rgba(244, 67, 54, 0.2); 
+            color: #ef9a9a; 
+            border: 1px solid rgba(244,67,54,0.4); 
+        }
+
+        /* ── Food Grid & Cards ── */
+        .food-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+            gap: 20px; 
+            margin-top: 20px; 
+        }
+        .food-card { 
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px; 
+            padding: 22px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            color: #f0f0f0;
+        }
+        .food-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+            border-color: rgba(165, 214, 167, 0.5);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        .food-card h3 { color: #a5d6a7; margin-bottom: 14px; font-size: 1.15rem; }
+        .food-card p { margin: 7px 0; color: #ddd; font-size: 0.92rem; }
+        .food-card strong { color: #fff; }
+
+        .status { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .status.available { background: rgba(76,175,80,0.3); color: #a5d6a7; border: 1px solid rgba(76,175,80,0.5); }
+
+        /* ── Location Header ── */
+        .location-header { 
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white; 
+            padding: 14px 22px; 
+            border-radius: 12px; 
+            margin: 28px 0 16px 0; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .location-badge { 
+            background: rgba(255,255,255,0.2); 
+            padding: 4px 14px; 
+            border-radius: 20px; 
+            font-size: 13px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        /* ── Navigate & Claim Buttons inside cards ── */
+        .navigate-btn {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 9px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 10px;
+            width: 100%;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            backdrop-filter: blur(8px);
+        }
+        .navigate-btn:hover { 
+            background: rgba(255,255,255,0.28); 
+            transform: translateY(-1px); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        /* ── Map Modal ── */
+        .map-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .map-modal-overlay.active { display: flex; }
+        .map-modal {
+            background: rgba(20,20,20,0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 20px;
+            width: 95%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+        }
+        .map-modal-header {
+            background: rgba(255,255,255,0.08);
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .map-modal-header h3 { margin: 0; font-size: 1.1rem; color: #fff; }
+        .map-close-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .map-info-bar {
+            padding: 12px 20px;
+            background: rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .map-info-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+        .map-info-item strong { color: #a5d6a7; }
+        #routeMap { height: 460px; width: 100%; }
+        .map-actions {
+            padding: 14px 20px;
+            display: flex;
+            gap: 10px;
+            background: rgba(255,255,255,0.05);
+            flex-wrap: wrap;
+        }
+        .btn-gmaps {
+            background: rgba(66,133,244,0.3);
+            color: white;
+            border: 1px solid rgba(66,133,244,0.5);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-gmaps:hover { background: rgba(66,133,244,0.5); transform: translateY(-1px); }
+        .btn-locate {
+            background: rgba(76,175,80,0.3);
+            color: white;
+            border: 1px solid rgba(76,175,80,0.5);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-locate:hover { background: rgba(76,175,80,0.5); }
+
+        /* ── Routing ── */
+        .route-instructions { font-size: 0.82rem; max-height: 160px; overflow-y: auto; }
+        .leaflet-routing-container {
+            background: rgba(20,20,20,0.85);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+            max-height: 160px;
+            overflow-y: auto;
+            font-size: 0.82rem;
+            width: 260px !important;
+            color: #ddd;
+        }
+        .leaflet-routing-alt { max-height: 140px; overflow-y: auto; }
+        .leaflet-routing-alt h2 { font-size: 0.85rem; padding: 6px 10px; background: rgba(76,175,80,0.5); color: white; margin: 0; }
+        .leaflet-routing-alt h3 { font-size: 0.8rem; padding: 4px 10px; color: #aaa; margin: 0; }
+        .leaflet-routing-alt table { width: 100%; border-collapse: collapse; }
+        .leaflet-routing-alt td { padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.78rem; }
+        .leaflet-routing-collapse-btn { display: none; }
+    </style>
+</head>
+<body>
+    <!-- Dynamic Background Images -->
+    <div class="page-bg-container">
+        <div class="page-bg active" style="background-image: url('https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1920');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1593113646773-028c64a8f1b8?w=1920');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1509099863731-ef4bff19e808?w=1920');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=1920');"></div>
+        <div class="page-overlay"></div>
+    </div>
+
+    <div class="container">
+        <h1>🍽️ Welcome to Request Food Dashboard</h1>
+        
+        <input type="hidden" id="ngoEmail">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button onclick="loadFoodFixed()" style="flex:1; min-width:160px;">🍽️ Available Food</button>
+            <button onclick="loadMyClaimedFood()" style="flex:1; min-width:160px; background:#1565C0;">🚗 My Claimed Food (Navigate)</button>
+        </div>
+        
+        <div id="alertBox"></div>
+
+        <div id="foodContainer"></div>
+
+    </div>
+
+    <script>
+        // Background image rotation
+        let bgIndex = 0;
+        const bgImages = document.querySelectorAll('.page-bg');
+        
+        setInterval(() => {
+            bgImages[bgIndex].classList.remove('active');
+            bgIndex = (bgIndex + 1) % bgImages.length;
+            bgImages[bgIndex].classList.add('active');
+        }, 5000); // Change every 5 seconds
+
+        // Auto-fill logged-in NGO email from localStorage
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedEmail = localStorage.getItem('userEmail');
+            const savedUser = localStorage.getItem('user');
+            if (savedEmail) {
+                document.getElementById('ngoEmail').value = savedEmail;
+            }
+            // Show NGO name if available
+            if (savedUser) {
+                try {
+                    const user = JSON.parse(savedUser);
+                    if (user.name) {
+                        const h1 = document.querySelector('h1');
+                        if (h1) h1.textContent = `🍽️ Welcome to Request Food Dashboard`;
+                    }
+                    // Auto-load food on page open
+                    if (savedEmail) loadFoodFixed();
+                } catch(e) {}
+            }
+        });
+
+        async function loadFoodFixed() {
+            const alertBox = document.getElementById('alertBox');
+            const container = document.getElementById('foodContainer');
+
+            alertBox.className = 'alert alert-success';
+            alertBox.innerHTML = '⏳ Loading available food...';
+
+            try {
+                // Get all available food directly - no login required
+                const foodResponse = await fetch('/api/food/all-available');
+                const foodData = await foodResponse.json();
+
+                if (!foodResponse.ok) {
+                    alertBox.className = 'alert alert-error';
+                    alertBox.innerHTML = '❌ Error loading food';
+                    return;
+                }
+
+                alertBox.className = 'alert alert-success';
+                alertBox.innerHTML = `✅ ${foodData.foods.length} food item(s) available`;
+
+                // Group by taluka/area
+                const grouped = {};
+                foodData.foods.forEach(food => {
+                    const key = food.taluka || food.area || 'Unknown';
+                    if (!grouped[key]) grouped[key] = [];
+                    grouped[key].push(food);
+                });
+
+                // Render HTML
+                let html = '';
+                Object.keys(grouped).sort().forEach(location => {
+                    html += `
+                        <div class="location-header">
+                            <span>📍 ${location}</span>
+                            <span class="location-badge">${grouped[location].length} items</span>
+                        </div>
+                        <div style="margin-bottom:10px;">
+                            <button onclick="selectAllInLocation('${location}', ${JSON.stringify(grouped[location].filter(f=>f.status==='available').map(f=>f.id))})"
+                                style="background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);color:#4ade80;padding:6px 16px;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;margin-right:8px;">
+                                ☑️ Select All Available
+                            </button>
+                            <button onclick="claimSelected()"
+                                style="background:rgba(74,222,128,0.2);border:1px solid rgba(74,222,128,0.4);color:#4ade80;padding:6px 16px;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:700;">
+                                ✅ Claim Selected (<span id="sel-count-${location}">0</span>)
+                            </button>
+                        </div>
+                        <div class="food-grid">
+                    `;
+                    
+                    grouped[location].forEach(food => {
+                        const expiry = new Date(food.expiry_time);
+                        const now = new Date();
+                        const hoursLeft = (expiry - now) / (1000 * 60 * 60);
+                        
+                        let statusColor, statusIcon, statusLabel, statusBg;
+                        if (hoursLeft > 6) {
+                            statusColor = '#155724'; statusIcon = '🟢'; statusLabel = 'Safe for Humans'; statusBg = '#d4edda';
+                        } else if (hoursLeft > 0) {
+                            statusColor = '#856404'; statusIcon = '🟡'; statusLabel = 'Safe for Animals'; statusBg = '#fff3cd';
+                        } else {
+                            statusColor = '#721c24'; statusIcon = '🔴'; statusLabel = 'Expired'; statusBg = '#f8d7da';
+                        }
+                        
+                        html += `
+                            <div class="food-card" id="card-${food.id}">
+                                ${food.status === 'available' ? `
+                                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                                    <input type="checkbox" id="chk-${food.id}" value="${food.id}"
+                                        onchange="updateSelCount('${location}')"
+                                        style="width:18px;height:18px;cursor:pointer;accent-color:#4ade80;">
+                                    <label for="chk-${food.id}" style="color:#4ade80;font-size:0.82rem;font-weight:700;cursor:pointer;">Select for claim</label>
+                                </div>` : ''}
+                                <h3>🍽️ ${food.title}</h3>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                    ${food.status === 'claimed'
+                                        ? `<span class="status" style="background:rgba(255,193,7,0.2);color:#ffd54f;border:1px solid rgba(255,193,7,0.4);">🔒 CLAIMED</span>`
+                                        : `<span class="status available">🟢 AVAILABLE</span>`
+                                    }
+                                    <span style="background:${statusBg}; color:${statusColor}; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:bold;">
+                                        ${statusIcon} ${statusLabel}
+                                    </span>
+                                </div>
+                                <p><strong>📝 Description:</strong> ${food.description}</p>
+                                <p><strong>🍽️ Type:</strong> ${food.food_type}</p>
+                                <p><strong>📦 Quantity:</strong> ${food.quantity}</p>
+                                <p><strong>📍 Location:</strong> ${food.area}</p>
+                                <p><strong>📍 Pickup:</strong> ${food.pickup_address}</p>
+                                <p><strong>📞 Contact:</strong> ${food.contact_person_name} - ${food.contact_person_phone}</p>
+                                ${food.status === 'claimed' && food.claimed_ngo_name ? `
+                                <div style="margin-top:10px; padding:12px; background:rgba(255,193,7,0.1); border-radius:10px; border:1px solid rgba(255,193,7,0.3);">
+                                    <div style="font-size:0.78rem; color:#ffd54f; font-weight:700; margin-bottom:6px;">🏢 Claimed By</div>
+                                    <div style="font-size:0.92rem; color:#fff; font-weight:600;">${food.claimed_ngo_name}</div>
+                                    ${food.claimed_ngo_phone ? `<div style="font-size:0.85rem; color:rgba(255,255,255,0.7); margin-top:3px;">📞 ${food.claimed_ngo_phone}</div>` : ''}
+                                    ${food.claimed_at ? `<div style="font-size:0.78rem; color:rgba(255,255,255,0.5); margin-top:3px;">🕐 ${new Date(food.claimed_at).toLocaleString()}</div>` : ''}
+                                </div>` : ''}
+                                <div style="margin-top:12px; padding:12px; background:rgba(255,255,255,0.05); border-radius:8px; border-left:4px solid ${statusColor};">
+                                    <div style="font-size:0.85rem; color:rgba(255,255,255,0.6); margin-bottom:4px;">⏰ Predicted Expiry</div>
+                                    <div style="font-weight:bold; color:#fff;">${expiry.toLocaleString()}</div>
+                                    <div id="countdown-${food.id}" style="font-size:1rem; font-weight:bold; color:${statusColor}; margin-top:4px;">Calculating...</div>
+                                </div>
+                                ${food.status === 'claimed'
+                                    ? `<div style="width:100%; margin-top:8px; padding:10px; background:rgba(255,193,7,0.15); border:1px solid rgba(255,193,7,0.3); color:#ffd54f; border-radius:8px; font-size:0.9rem; font-weight:700; text-align:center;">🔒 Already Claimed</div>`
+                                    : `<button id="ngo-claim-btn-${food.id}" onclick="openNgoClaimModal(${food.id})"
+                                        style="width:100%; margin-top:8px; padding:10px; background:rgba(74,222,128,0.2); border:1px solid rgba(74,222,128,0.4); color:#4ade80; border-radius:8px; font-size:0.9rem; font-weight:700; cursor:pointer; transition:all 0.2s;">
+                                        ✅ Claim This Food
+                                    </button>`
+                                }
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div>';
+                });
+                
+                container.innerHTML = html;
+                
+                // Start live countdown timers
+                startCountdowns(foodData.foods);
+                
+                console.log('✅ Step 8: Rendered successfully!');
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alertBox.className = 'alert alert-error';
+                alertBox.innerHTML = '❌ Error: ' + error.message;
+            }
+        }
+        
+        // ── Multi-select claim helpers ────────────────────────────────────────
+        function updateSelCount(location) {
+            const checked = document.querySelectorAll(`input[type=checkbox]:checked`).length;
+            // Update all sel-count spans
+            document.querySelectorAll('[id^="sel-count-"]').forEach(el => {
+                el.textContent = checked;
+            });
+        }
+
+        function selectAllInLocation(location, ids) {
+            ids.forEach(id => {
+                const chk = document.getElementById('chk-' + id);
+                if (chk) chk.checked = true;
+            });
+            updateSelCount(location);
+        }
+
+        function claimSelected() {
+            const checked = [...document.querySelectorAll('input[type=checkbox]:checked')];
+            if (checked.length === 0) {
+                alert('Please select at least one food item.');
+                return;
+            }
+            // Store selected IDs and open claim modal for bulk
+            window._bulkClaimIds = checked.map(c => parseInt(c.value));
+            // Open NGO claim modal - on confirm, claim all selected
+            document.getElementById('ngoClaimFoodId').value = window._bulkClaimIds[0];
+            document.getElementById('ngoClaimModal').style.display = 'flex';
+            document.getElementById('ngoClaimErr').style.display = 'none';
+            // Load NGO list
+            openNgoClaimModal(window._bulkClaimIds[0]);
+        }
+
+        function startCountdowns(foods) {
+            foods.forEach(food => {
+                updateCountdown(food.id, food.expiry_time);
+            });
+            // Refresh every minute
+            setInterval(() => {
+                foods.forEach(food => updateCountdown(food.id, food.expiry_time));
+            }, 60000);
+        }
+        
+        function updateCountdown(foodId, expiryTime) {
+            const el = document.getElementById('countdown-' + foodId);
+            if (!el) return;
+            
+            const expiry = new Date(expiryTime);
+            const now = new Date();
+            const diff = expiry - now;
+            
+            if (diff <= 0) {
+                el.innerHTML = '🔴 EXPIRED';
+                el.style.color = '#721c24';
+                return;
+            }
+            
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (hours > 6) {
+                el.innerHTML = `🟢 ${hours}h ${minutes}m remaining`;
+                el.style.color = '#155724';
+            } else if (hours > 0) {
+                el.innerHTML = `🟡 ${hours}h ${minutes}m remaining`;
+                el.style.color = '#856404';
+            } else {
+                el.innerHTML = `🔴 ${minutes}m remaining - Expiring Soon!`;
+                el.style.color = '#721c24';
+            }
+        }
+
+        async function promptNgoForClaims() {
+            // Load NGO list and show a quick select
+            try {
+                const res = await fetch('/api/ngo-contacts');
+                const data = await res.json();
+                const ngos = (data.contacts || []).filter(c => c.active);
+
+                const name = prompt('Enter your NGO name exactly as registered:\n\n' +
+                    ngos.map(n => `• ${n.name}`).join('\n'));
+                if (!name) return;
+
+                const matched = ngos.find(n => n.name.toLowerCase() === name.trim().toLowerCase());
+                if (matched) {
+                    localStorage.setItem('claimedNgoName', matched.name);
+                    localStorage.setItem('claimedNgoPhone', matched.phone);
+                    loadMyClaimedFood();
+                } else {
+                    alert('NGO not found. Please enter exact name.');
+                }
+            } catch(e) {
+                alert('Error loading NGO list');
+            }
+        }
+
+        // ── MAP / NAVIGATION ─────────────────────────────────────────────────
+        let routeMapInstance = null;
+        let currentDonorLat = null;
+        let currentDonorLng = null;
+        let currentDonorAddress = '';
+
+        // Open map using area fallback coords when GPS not available
+        function openMapWithFallback(area, taluka, address, title) {
+            const coords = getFoodCoords({ area: area, taluka: taluka });
+            if (coords) {
+                openMapModal(coords[0], coords[1], address || area, title);
+            } else {
+                // Last resort: Google Maps
+                openGoogleMapsRoute(null, null, address, title, area, taluka);
+            }
+        }
+
+        function openMapModal(donorLat, donorLng, address, title) {
+            currentDonorLat = donorLat;
+            currentDonorLng = donorLng;
+            currentDonorAddress = address || '';
+
+            document.getElementById('mapDonorAddress').textContent = address || 'See map';
+            document.getElementById('mapModalTitle').textContent = `🗺️ ${title || 'Food Location'}`;
+            document.getElementById('mapDistance').textContent = 'Calculating...';
+            document.getElementById('mapETA').textContent = '...';
+
+            document.getElementById('gmapsDirectLink').href =
+                `https://www.google.com/maps/dir/?api=1&destination=${donorLat},${donorLng}&travelmode=driving`;
+
+            document.getElementById('mapModalOverlay').classList.add('active');
+
+            // Init Leaflet map after modal visible
+            setTimeout(() => initRouteMap(donorLat, donorLng, address, title), 150);
+        }
+
+        function initRouteMap(donorLat, donorLng, address, title) {
+            // Destroy old map
+            if (routeMapInstance) { routeMapInstance.remove(); routeMapInstance = null; }
+
+            routeMapInstance = L.map('routeMap').setView([donorLat, donorLng], 14);
+
+            // OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(routeMapInstance);
+
+            // Custom icons
+            const donorIcon = L.divIcon({
+                html: `<div style="background:#e53935;color:white;border-radius:50% 50% 50% 0;width:42px;height:42px;
+                    display:flex;align-items:center;justify-content:center;font-size:20px;
+                    transform:rotate(-45deg);box-shadow:0 3px 10px rgba(0,0,0,0.4);border:3px solid white;">
+                    <span style="transform:rotate(45deg)">🍽️</span></div>`,
+                iconSize: [42, 42], iconAnchor: [21, 42], className: ''
+            });
+            const ngoIcon = L.divIcon({
+                html: `<div style="background:#1565C0;color:white;border-radius:50% 50% 50% 0;width:42px;height:42px;
+                    display:flex;align-items:center;justify-content:center;font-size:20px;
+                    transform:rotate(-45deg);box-shadow:0 3px 10px rgba(0,0,0,0.4);border:3px solid white;">
+                    <span style="transform:rotate(45deg)">🏢</span></div>`,
+                iconSize: [42, 42], iconAnchor: [21, 42], className: ''
+            });
+
+            // Always place donor marker
+            L.marker([donorLat, donorLng], { icon: donorIcon })
+                .addTo(routeMapInstance)
+                .bindPopup(`<b>🍽️ ${title || 'Food'}</b><br>📍 ${address || ''}`)
+                .openPopup();
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const ngoLat = pos.coords.latitude;
+                        const ngoLng = pos.coords.longitude;
+
+                        // ── Real road route via OSRM (free, no API key) ──────
+                        const routingControl = L.Routing.control({
+                            waypoints: [
+                                L.latLng(ngoLat, ngoLng),
+                                L.latLng(donorLat, donorLng)
+                            ],
+                            router: L.Routing.osrmv1({
+                                serviceUrl: 'https://router.project-osrm.org/route/v1',
+                                profile: 'driving'
+                            }),
+                            createMarker: (i, wp) => {
+                                return L.marker(wp.latLng, { icon: i === 0 ? ngoIcon : donorIcon })
+                                    .bindPopup(i === 0 ? '<b>🏢 Your Location (NGO)</b>' : `<b>🍽️ ${title || 'Food'}</b><br>📍 ${address || ''}`);
+                            },
+                            lineOptions: {
+                                styles: [
+                                    { color: '#1565C0', weight: 7, opacity: 0.25 },
+                                    { color: '#4CAF50', weight: 5, opacity: 1 }
+                                ],
+                                extendToWaypoints: true,
+                                missingRouteTolerance: 0
+                            },
+                            routeWhileDragging: false,
+                            addWaypoints: false,
+                            fitSelectedRoutes: true,
+                            showAlternatives: false,
+                            collapsible: true,
+                            show: true,
+                            containerClassName: 'route-instructions'
+                        }).addTo(routeMapInstance);
+
+                        // Update distance & ETA from OSRM response
+                        routingControl.on('routesfound', (e) => {
+                            const summary = e.routes[0].summary;
+                            const distKm = (summary.totalDistance / 1000).toFixed(1);
+                            const mins = Math.round(summary.totalTime / 60);
+                            document.getElementById('mapDistance').textContent = `~${distKm} km`;
+                            document.getElementById('mapETA').textContent = mins >= 60
+                                ? `~${Math.floor(mins/60)}h ${mins%60}m`
+                                : `~${mins} min`;
+                        });
+
+                        routingControl.on('routingerror', () => {
+                            // Fallback: straight line if OSRM fails
+                            L.marker([ngoLat, ngoLng], { icon: ngoIcon })
+                                .addTo(routeMapInstance)
+                                .bindPopup('<b>🏢 Your Location (NGO)</b>');
+                            L.polyline([[ngoLat, ngoLng], [donorLat, donorLng]], {
+                                color: '#4CAF50', weight: 5, dashArray: '10, 8', opacity: 0.9
+                            }).addTo(routeMapInstance);
+                            routeMapInstance.fitBounds(
+                                L.latLngBounds([[ngoLat, ngoLng], [donorLat, donorLng]]),
+                                { padding: [50, 50] }
+                            );
+                            document.getElementById('mapDistance').textContent = 'Route unavailable';
+                        });
+
+                        // Update Google Maps link with origin
+                        document.getElementById('gmapsDirectLink').href =
+                            `https://www.google.com/maps/dir/?api=1&origin=${ngoLat},${ngoLng}&destination=${donorLat},${donorLng}&travelmode=driving`;
+                    },
+                    () => {
+                        // No GPS — just show donor marker centered
+                        document.getElementById('mapDistance').textContent = 'Enable GPS for route';
+                        document.getElementById('mapETA').textContent = '-';
+                    },
+                    { timeout: 8000, enableHighAccuracy: true }
+                );
+            }
+        }
+
+        function openGmapsNavigation() {
+            if (!currentDonorLat || !currentDonorLng) return;
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const url = `https://www.google.com/maps/dir/?api=1&origin=${pos.coords.latitude},${pos.coords.longitude}&destination=${currentDonorLat},${currentDonorLng}&travelmode=driving`;
+                    window.open(url, '_blank');
+                },
+                () => {
+                    const url = `https://www.google.com/maps/dir/?api=1&destination=${currentDonorLat},${currentDonorLng}&travelmode=driving`;
+                    window.open(url, '_blank');
+                },
+                { timeout: 6000 }
+            );
+        }
+
+        function closeMapModal(e) {
+            if (e.target === document.getElementById('mapModalOverlay')) closeMapModalDirect();
+        }
+
+        function closeMapModalDirect() {
+            document.getElementById('mapModalOverlay').classList.remove('active');
+            if (routeMapInstance) { routeMapInstance.remove(); routeMapInstance = null; }
+        }
+
+        // ── GOOGLE MAPS ROUTE: NGO location → Donor location ─────────────────
+        function openGoogleMapsRoute(donorLat, donorLng, donorAddress, foodTitle, donorArea, donorTaluka) {
+            const btn = event && event.target;
+            const origText = btn ? btn.innerHTML : '';
+            if (btn) { btn.innerHTML = '⏳ Getting location...'; btn.disabled = true; }
+
+            // Use GPS coordinates as destination (most accurate)
+            const destStr = (donorLat && donorLng)
+                ? `${donorLat},${donorLng}`
+                : encodeURIComponent((donorTaluka || donorArea || 'Solapur') + ', Maharashtra, India');
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const url = `https://www.google.com/maps/dir/?api=1&origin=${pos.coords.latitude},${pos.coords.longitude}&destination=${destStr}&travelmode=driving`;
+                    window.open(url, '_blank');
+                    if (btn) { btn.innerHTML = origText; btn.disabled = false; }
+                },
+                () => {
+                    const url = `https://www.google.com/maps/dir/?api=1&destination=${destStr}&travelmode=driving`;
+                    window.open(url, '_blank');
+                    if (btn) { btn.innerHTML = origText; btn.disabled = false; }
+                },
+                { timeout: 6000, enableHighAccuracy: true }
+            );
+        }
+
+        // ── CLAIMED FOOD WITH NAVIGATION ─────────────────────────────────────
+        async function loadMyClaimedFood() {
+            const alertBox = document.getElementById('alertBox');
+            const container = document.getElementById('foodContainer');
+
+            alertBox.className = 'alert alert-success';
+            alertBox.innerHTML = '⏳ Loading claimed food...';
+            container.innerHTML = '';
+
+            try {
+                const res = await fetch('/api/food/all-claimed');
+                const data = await res.json();
+                const foods = data.foods || [];
+
+                if (foods.length === 0) {
+                    alertBox.className = 'alert alert-success';
+                    alertBox.innerHTML = 'ℹ️ No claimed food yet.';
+                    return;
+                }
+
+                alertBox.className = 'alert alert-success';
+                alertBox.innerHTML = `✅ ${foods.length} claimed food item(s)`;
+
+                let html = `<h2 style="margin:20px 0 10px; color:#a5d6a7;">🔒 Claimed Food</h2><div class="food-grid">`;
+
+                foods.forEach(food => {
+                    const expiry = new Date(food.expiry_time);
+                    const hoursLeft = (expiry - new Date()) / 3600000;
+                    const statusColor = hoursLeft > 6 ? '#a5d6a7' : hoursLeft > 0 ? '#ffd54f' : '#ef9a9a';
+                    const statusLabel = hoursLeft > 6 ? '🟢 Safe for Humans' : hoursLeft > 0 ? '🟡 Safe for Animals' : '🔴 Expired';
+                    const gmapsUrl = food.gps_latitude
+                        ? `https://www.google.com/maps/dir/?api=1&destination=${food.gps_latitude},${food.gps_longitude}`
+                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(food.pickup_address || food.area || 'Solapur')}`;
+
+                    html += `
+                        <div class="food-card">
+                            <h3>🍽️ ${food.title}</h3>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                <span class="status" style="background:rgba(255,193,7,0.2);color:#ffd54f;border:1px solid rgba(255,193,7,0.4);">🔒 CLAIMED</span>
+                                <span style="color:${statusColor};font-size:12px;font-weight:bold;">${statusLabel}</span>
+                            </div>
+                            ${food.claimed_ngo_name ? `
+                            <div style="background:rgba(216,180,254,0.1);border:1px solid rgba(216,180,254,0.3);border-radius:10px;padding:12px;margin-bottom:12px;">
+                                <div style="font-size:0.75rem;color:#d8b4fe;font-weight:700;margin-bottom:6px;text-transform:uppercase;">🏢 Claimed By</div>
+                                <div style="font-weight:700;color:#fff;font-size:0.95rem;">${food.claimed_ngo_name}</div>
+                                ${food.claimed_ngo_phone ? `<div style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-top:3px;">📞 ${food.claimed_ngo_phone}</div>` : ''}
+                                ${food.claimed_at ? `<div style="color:rgba(255,255,255,0.4);font-size:0.78rem;margin-top:3px;">🕐 ${new Date(food.claimed_at).toLocaleString()}</div>` : ''}
+                            </div>` : ''}
+                            <p><strong>📦 Quantity:</strong> ${food.quantity}</p>
+                            <p><strong>📍 Pickup:</strong> ${food.pickup_address || 'N/A'}</p>
+                            <p><strong>📞 Donor Contact:</strong> ${food.contact_person_name || 'N/A'} - ${food.contact_person_phone || 'N/A'}</p>
+                            <p><strong>🔑 Pickup Code:</strong> <span style="font-size:1.1rem;font-weight:900;color:#90caf9;letter-spacing:3px;">${food.pickup_code || 'N/A'}</span></p>
+                            <p><strong>⏰ Expires:</strong> ${expiry.toLocaleString()}</p>
+                            <div id="claimed-countdown-${food.id}" style="font-weight:bold;color:${statusColor};margin:6px 0;font-size:0.9rem;">Calculating...</div>
+                            <a href="${gmapsUrl}" target="_blank" style="display:block;text-align:center;margin-top:6px;color:#90caf9;font-size:0.85rem;text-decoration:none;">📱 Open in Google Maps</a>
+                        </div>`;
+                });
+
+                html += '</div>';
+                container.innerHTML = html;
+                foods.forEach(f => updateCountdown('claimed-countdown-' + f.id, f.expiry_time));
+                setInterval(() => foods.forEach(f => updateCountdown('claimed-countdown-' + f.id, f.expiry_time)), 60000);
+
+            } catch (err) {
+                alertBox.className = 'alert alert-error';
+                alertBox.innerHTML = '❌ Error: ' + err.message;
+            }
+        }
+        // ── AREA → COORDINATES FALLBACK (for food without GPS) ───────────────
+        const AREA_COORDS = {
+            // Pandharpur Taluka villages
+            'Pandharpur':   [17.6868, 75.3310],
+            'Gopalpur':     [17.6720, 75.3380],  // Gopalpur, Pandharpur taluka (near Bhima river)
+            'Visava':       [17.7050, 75.3420],
+            'Shetphal':     [17.6500, 75.2800],
+            'Mangalvedhe':  [17.5200, 75.4500],
+            'Velapur':      [17.7500, 75.2500],
+            'Narkhed':      [17.6200, 75.3800],
+            // Barshi Taluka
+            'Barshi':       [18.2333, 75.6944],
+            // Solapur
+            'Solapur City': [17.6868, 75.9064],
+            'Solapur':      [17.6868, 75.9064],
+            // Mohol
+            'Mohol':        [17.7167, 75.6833],
+        };
+
+        function getFoodCoords(food) {
+            if (food.gps_latitude && food.gps_longitude) {
+                return [parseFloat(food.gps_latitude), parseFloat(food.gps_longitude)];
+            }
+            // Fallback: use area or taluka name lookup
+            const key = food.area || food.taluka || '';
+            if (AREA_COORDS[key]) return AREA_COORDS[key];
+            // Try partial match
+            for (const k of Object.keys(AREA_COORDS)) {
+                if (key.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(key.toLowerCase())) {
+                    return AREA_COORDS[k];
+                }
+            }
+            return null;
+        }
+
+        // ── NGO CLAIM MODAL ───────────────────────────────────────────────────
+        let ngoContactsList = [];
+
+        async function openNgoClaimModal(foodId) {
+            document.getElementById('ngoClaimFoodId').value = foodId;
+            document.getElementById('ngoClaimModal').style.display = 'flex';
+            document.getElementById('ngoClaimErr').style.display = 'none';
+
+            // Load NGO contacts from admin list
+            try {
+                const res = await fetch('/api/ngo-contacts');
+                const data = await res.json();
+                ngoContactsList = (data.contacts || []).filter(c => c.active);
+
+                const select = document.getElementById('ngoSelectDropdown');
+                select.innerHTML = '<option value="">-- Select your NGO --</option>';
+                ngoContactsList.forEach(ngo => {
+                    const opt = document.createElement('option');
+                    opt.value = ngo.id;
+                    opt.textContent = `${ngo.name} (${ngo.taluka || ngo.area})`;
+                    select.appendChild(opt);
+                });
+            } catch(e) {
+                console.error('Could not load NGO list', e);
+            }
+        }
+
+        function onNgoSelect() {
+            const id = parseInt(document.getElementById('ngoSelectDropdown').value);
+            const ngo = ngoContactsList.find(n => n.id === id);
+            if (!ngo) {
+                document.getElementById('ngoInfoBox').style.display = 'none';
+                return;
+            }
+            document.getElementById('ngoClaimName').value    = ngo.name    || '';
+            document.getElementById('ngoClaimContact').value = ngo.phone   || '';
+            document.getElementById('ngoClaimTaluka').value  = ngo.taluka  || '';
+            document.getElementById('ngoClaimArea').value    = ngo.area    || '';
+
+            // Show info box
+            document.getElementById('infoName').textContent   = ngo.name   || '-';
+            document.getElementById('infoPhone').textContent  = ngo.phone  || '-';
+            document.getElementById('infoTaluka').textContent = ngo.taluka || '-';
+            document.getElementById('infoArea').textContent   = ngo.area   || '-';
+            document.getElementById('ngoInfoBox').style.display = 'block';
+        }
+
+        function closeNgoClaimModal() {
+            document.getElementById('ngoClaimModal').style.display = 'none';
+            const btn = document.getElementById('ngoClaimSubmitBtn');
+            if (btn) { btn.disabled = false; btn.textContent = '✅ Confirm Claim'; }
+        }
+
+        async function submitNgoClaim() {
+            const foodId  = document.getElementById('ngoClaimFoodId').value;
+            const name    = document.getElementById('ngoClaimName').value.trim();
+            const contact = document.getElementById('ngoClaimContact').value.trim();
+            const taluka  = document.getElementById('ngoClaimTaluka').value.trim();
+            const area    = document.getElementById('ngoClaimArea').value.trim();
+
+            if (!name || !contact) {
+                document.getElementById('ngoClaimErr').style.display = 'block';
+                document.getElementById('ngoClaimErr').textContent = '⚠️ Please select an NGO first.';
+                return;
+            }
+            document.getElementById('ngoClaimErr').style.display = 'none';
+
+            const btn = document.getElementById('ngoClaimSubmitBtn');
+            btn.disabled = true; btn.textContent = '⏳ Claiming...';
+
+            try {
+                // Claim all selected foods (bulk or single)
+                const idsToClain = window._bulkClaimIds && window._bulkClaimIds.length > 0
+                    ? window._bulkClaimIds
+                    : [parseInt(foodId)];
+
+                let successCount = 0;
+                for (const id of idsToClain) {
+                    const res = await fetch('/api/food/claim-test', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            food_id: id,
+                            ngo_email: contact + '@ngo.local',
+                            ngo_name: name,
+                            ngo_contact: contact,
+                            ngo_taluka: taluka,
+                            ngo_area: area
+                        })
+                    });
+                    if (res.ok) successCount++;
+                }
+
+                window._bulkClaimIds = [];
+                closeNgoClaimModal();
+
+                // Save NGO info
+                localStorage.setItem('claimedNgoName', name);
+                localStorage.setItem('claimedNgoPhone', contact);
+
+                alert(`✅ ${successCount} food item(s) claimed by ${name}!`);
+                loadFoodFixed(); // Refresh
+            } catch(e) {
+                closeNgoClaimModal();
+                alert('❌ Error: ' + e.message);
+            }
+        }
+    </script>
+
+    <!-- Map Modal -->
+    <div class="map-modal-overlay" id="mapModalOverlay" onclick="closeMapModal(event)">
+        <div class="map-modal">
+            <div class="map-modal-header">
+                <h3 id="mapModalTitle">🗺️ Navigate to Donor Location</h3>
+                <button class="map-close-btn" onclick="closeMapModalDirect()">✕</button>
+            </div>
+            <div class="map-info-bar">
+                <div class="map-info-item" style="flex:1;">📍 Pickup: <strong><span id="mapDonorAddress">Loading...</span></strong></div>
+                <div class="map-info-item">📏 <strong id="mapDistance">-</strong></div>
+                <div class="map-info-item">⏱️ ETA: <strong id="mapETA">-</strong></div>
+            </div>
+            <!-- Leaflet map with donor + NGO markers -->
+            <div id="routeMap" style="width:100%; height:420px;"></div>
+            <div class="map-actions">
+                <button class="btn-locate" onclick="openGmapsNavigation()" style="flex:2; font-size:1rem; padding:12px 20px;">
+                    🧭 Start Navigation (Google Maps)
+                </button>
+                <a id="gmapsDirectLink" href="#" target="_blank" class="btn-gmaps" style="flex:1;">
+                    📍 View on Map
+                </a>
+            </div>
+        </div>
+    </div>
+
+<!-- NGO Claim Modal -->
+<div id="ngoClaimModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:rgba(20,20,30,0.95); border:1px solid rgba(255,255,255,0.15); border-radius:20px; padding:30px; width:90%; max-width:460px; box-shadow:0 20px 60px rgba(0,0,0,0.6); color:#f0f0f0;">
+        <h3 style="color:#a5d6a7; margin-bottom:6px; font-size:1.2rem;">🏢 Select Your NGO</h3>
+        <p style="color:rgba(255,255,255,0.5); font-size:0.85rem; margin-bottom:20px;">Admin-registered NGOs only can claim food</p>
+        <input type="hidden" id="ngoClaimFoodId">
+
+        <!-- NGO Dropdown -->
+        <div style="margin-bottom:16px;">
+            <label style="font-size:0.8rem; font-weight:600; color:#aaa; display:block; margin-bottom:6px;">🏢 Select NGO *</label>
+            <select id="ngoSelectDropdown" onchange="onNgoSelect()"
+                style="width:100%; padding:11px 14px; border:1px solid rgba(255,255,255,0.2); border-radius:10px; font-size:0.95rem; background:#1e1e2e; color:#fff; cursor:pointer;">
+                <option value="">-- Select your NGO --</option>
+            </select>
+        </div>
+
+        <!-- Auto-filled NGO Info -->
+        <div id="ngoInfoBox" style="display:none; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:16px; margin-bottom:16px;">
+            <div style="font-size:0.78rem; color:#aaa; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">NGO Details</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.88rem;">
+                <div><span style="color:#aaa;">🏢 Name:</span><br><strong id="infoName" style="color:#d8b4fe;">-</strong></div>
+                <div><span style="color:#aaa;">📞 Phone:</span><br><strong id="infoPhone" style="color:#86efac;">-</strong></div>
+                <div><span style="color:#aaa;">📍 Taluka:</span><br><strong id="infoTaluka" style="color:#fde68a;">-</strong></div>
+                <div><span style="color:#aaa;">🏘️ Area:</span><br><strong id="infoArea" style="color:#fde68a;">-</strong></div>
+            </div>
+        </div>
+
+        <!-- Hidden fields for submit -->
+        <input type="hidden" id="ngoClaimName">
+        <input type="hidden" id="ngoClaimContact">
+        <input type="hidden" id="ngoClaimTaluka">
+        <input type="hidden" id="ngoClaimArea">
+
+        <div id="ngoClaimErr" style="display:none; color:#ef9a9a; font-size:0.82rem; margin-bottom:10px;">⚠️ Please select an NGO first.</div>
+
+        <div style="display:flex; gap:10px; margin-top:8px;">
+            <button onclick="closeNgoClaimModal()"
+                style="flex:1; padding:12px; background:rgba(255,255,255,0.08); color:#ccc; border:1px solid rgba(255,255,255,0.15); border-radius:10px; font-size:0.9rem; font-weight:600; cursor:pointer;">
+                Cancel
+            </button>
+            <button id="ngoClaimSubmitBtn" onclick="submitNgoClaim()"
+                style="flex:2; padding:12px; background:linear-gradient(135deg,#4ade80,#16a34a); color:white; border:none; border-radius:10px; font-size:0.9rem; font-weight:700; cursor:pointer;">
+                ✅ Confirm Claim
+            </button>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Language Switcher -->
+    </body>
+</html>

@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO Dashboard - Solapur Food Share (FIXED)</title>
+    <style>
+        /* Version: 2026-03-13-13-05 - AI FIXED */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: #f5f5f5;
+            padding: 20px; 
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        .page-bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .page-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-color: #999;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            filter: blur(3px);
+        }
+        .page-bg.active {
+            opacity: 1;
+        }
+        .page-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        /* Smooth Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.8s ease-out;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #4CAF50; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .login-box { 
+            background: rgba(255, 255, 255, 0.85); 
+            padding: 20px; 
+            border-radius: 10px; 
+            margin-bottom: 30px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            animation: fadeInUp 0.6s ease-out;
+        }
+        .food-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px; }
+        .food-card { 
+            background: rgba(255, 255, 255, 0.9); 
+            padding: 30px; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+            border: 2px solid #f0f0f0;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .food-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(180deg, #4CAF50, #45a049);
+        }
+        .food-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(76, 175, 80, 0.15);
+            border-color: #4CAF50;
+        }
+        .food-card h3 { 
+            color: #2d5a3d; 
+            margin-bottom: 20px; 
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .food-card p { margin: 8px 0; color: #666; font-size: 15px; }
+        .food-card .status { 
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px; 
+            border-radius: 25px; 
+            font-size: 13px; 
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status::before {
+            content: '';
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .status.available { 
+            background: linear-gradient(135deg, #d4edda, #c3e6cb); 
+            color: #155724; 
+            border: 2px solid #28a745;
+        }
+        .status.available::before {
+            background: #28a745;
+        }
+        .status.claimed { 
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7); 
+            color: #856404; 
+            border: 2px solid #ffc107;
+        }
+        .status.claimed::before {
+            background: #ffc107;
+        }
+        .status.picked_up { 
+            background: linear-gradient(135deg, #d1ecf1, #bee5eb); 
+            color: #0c5460; 
+            border: 2px solid #17a2b8;
+        }
+        .status.picked_up::before {
+            background: #17a2b8;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+        button { 
+            background: #4CAF50; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin-top: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        button:hover { 
+            background: #45a049;
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+        button:active {
+            transform: translateY(0) scale(0.98);
+        }
+        button.claim { 
+            background: #2196F3;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+        button.claim:hover {
+            background: #1976D2;
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+        }
+        button.verify { 
+            background: #FF9800;
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+        }
+        button.verify:hover {
+            background: #F57C00;
+            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+        }
+        input { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 5px; margin-bottom: 10px; }
+        .alert { padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+        .empty { text-align: center; padding: 40px; color: #999; }
+        
+        /* Notification Bell Styles */
+        .notification-bell {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        .bell-icon {
+            position: relative;
+            background: #4CAF50;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            transition: all 0.3s ease;
+        }
+        .bell-icon:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #F44336;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .notification-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 350px;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1001;
+        }
+        .notification-dropdown.show {
+            display: block;
+        }
+        .notification-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .notification-item:hover {
+            background: #f5f5f5;
+        }
+        .notification-item.unread {
+            background: #e8f5e8;
+            border-left: 4px solid #4CAF50;
+        }
+        .notification-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .notification-message {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .notification-time {
+            color: #999;
+            font-size: 12px;
+        }
+        
+        /* Tabs Styles */
+        .tabs-container {
+            display: none;
+            margin-bottom: 30px;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        .tab:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Loading Animation */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="page-bg-container">
+        <div class="page-bg" id="pageBg"></div>
+        <div class="page-overlay"></div>
+    </div>
+    
+    <div class="container">
+        <h1>🍽️ NGO Dashboard - Solapur Food Share</h1>
+        <p class="subtitle">Connect surplus food with NGOs in need across Solapur district</p>
+        
+        <!-- Notification Bell -->
+        <div class="notification-bell" id="notificationBell" style="display: none;" onclick="toggleNotifications()">
+            <div class="bell-icon">🔔</div>
+            <div class="notification-badge" id="notificationBadge">0</div>
+        </div>
+        
+        <!-- Notification Dropdown -->
+        <div class="notification-dropdown" id="notificationDropdown">
+            <div style="padding: 15px; border-bottom: 1px solid #eee; font-weight: bold;">
+                📬 Notifications
+            </div>
+            <div id="notificationList">
+                <!-- Notifications will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Login Section -->
+        <div class="login-box fade-in">
+            <h2>🔐 NGO Login</h2>
+            <div class="form-group">
+                <label for="ngoEmail">📧 Email Address:</label>
+                <input type="email" id="ngoEmail" placeholder="Enter your NGO email" value="annapurna@gmail.com">
+            </div>
+            <button onclick="loadFood()">🎯 Load Food in My Area</button>
+        </div>
+        
+        <!-- Alert Box -->
+        <div id="alertBox" class="alert" style="display: none;"></div>
+        
+        <!-- Tabs Container -->
+        <div class="tabs-container" id="tabsContainer">
+            <div class="tabs">
+                <div class="tab" id="availableTab" style="background: #4CAF50;" onclick="showTab('available')">🍽️ Available Food</div>
+                <div class="tab" id="claimedTab" style="background: #666;" onclick="showTab('claimed')">📦 My Claimed Food</div>
+            </div>
+        </div>
+        
+        <!-- Food Container -->
+        <div id="foodContainer"></div>
+        
+        <!-- Claimed Food Container -->
+        <div id="claimedContainer" style="display: none;"></div>
+    </div>
+
+    <script>
+        let currentNGO = null;
+        let notificationInterval = null;
+        let currentTab = 'available';
+
+        function showTab(tab) {
+            currentTab = tab;
+            const availableTab = document.getElementById('availableTab');
+            const claimedTab = document.getElementById('claimedTab');
+            const foodContainer = document.getElementById('foodContainer');
+            const claimedContainer = document.getElementById('claimedContainer');
+            
+            if (tab === 'available') {
+                availableTab.style.background = '#4CAF50';
+                claimedTab.style.background = '#666';
+                foodContainer.style.display = 'block';
+                claimedContainer.style.display = 'none';
+                // Force immediate food reload
+                if (currentNGO) {
+                    console.log('🔄 Force reloading available food...');
+                    foodContainer.innerHTML = '<div style="text-align: center; padding: 50px;">🔄 Loading food...</div>';
+                    setTimeout(() => loadFood(), 100);
+                }
+            } else {
+                availableTab.style.background = '#666';
+                claimedTab.style.background = '#FF9800';
+                foodContainer.style.display = 'none';
+                claimedContainer.style.display = 'block';
+                loadClaimedFood();
+            }
+        }
+
+        async function loadFood() {
+            const email = document.getElementById('ngoEmail').value;
+            if (!email) {
+                alert('Please enter your email');
+                return;
+            }
+
+            const alertBox = document.getElementById('alertBox');
+            const container = document.getElementById('foodContainer');
+
+            try {
+                // Get NGO details
+                const ngoResponse = await fetch('/api/user/by-email?email=' + encodeURIComponent(email));
+                const ngoData = await ngoResponse.json();
+
+                if (!ngoResponse.ok) {
+                    alertBox.className = 'alert alert-error';
+                    alertBox.innerHTML = '❌ NGO not found. Please register first.';
+                    return;
+                }
+
+                currentNGO = ngoData;
+
+                if (currentNGO.user_type !== 'ngo') {
+                    alertBox.className = 'alert alert-error';
+                    alertBox.innerHTML = '❌ This email is registered as Donor, not NGO.';
+                    return;
+                }
+
+                // Show notification bell
+                document.getElementById('notificationBell').style.display = 'block';
+
+                // Start loading notifications
+                loadNotifications();
+
+                // Auto-refresh notifications every 30 seconds
+                if (notificationInterval) clearInterval(notificationInterval);
+                notificationInterval = setInterval(loadNotifications, 30000);
+
+                // Get food from NGO's specific area
+                const ngoArea = currentNGO.area || currentNGO.taluka;
+                console.log('🔍 NGO area:', ngoArea);
+                console.log('🔍 NGO data:', currentNGO);
+                
+                if (!ngoArea) {
+                    alertBox.className = 'alert alert-error';
+                    alertBox.innerHTML = '❌ NGO area not set. Please update your profile.';
+                    return;
+                }
+                
+                const timestamp = new Date().getTime(); // Cache busting
+                
+                // Strategy: Show food from NGO's specific area
+                let apiUrl = `/api/food/available-in-area?area=${encodeURIComponent(ngoArea)}&t=${timestamp}`;
+                console.log('🔍 Area-specific API URL:', apiUrl);
+                
+                let foodResponse = await fetch(apiUrl);
+                let foodData = await foodResponse.json();
+                
+                console.log('🔍 Area food response status:', foodResponse.status);
+                console.log('🔍 Area food data:', foodData);
+
+                if (!foodResponse.ok) {
+                    alertBox.className = 'alert alert-error';
+                    alertBox.innerHTML = '❌ Error loading food';
+                    return;
+                }
+
+                alertBox.className = 'alert alert-success';
+                alertBox.innerHTML = `✅ Logged in as: ${currentNGO.name} | Showing food from your area: ${ngoArea} (${foodData.foods?.length || 0} items)`;
+
+                // Show AI Summary Dashboard
+                showAISummary(foodData.foods);
+
+                // Show tabs
+                document.getElementById('tabsContainer').style.display = 'block';
+
+                // Display food grouped by area (fallback to taluka)
+                console.log('🔍 Food data length:', foodData.foods.length);
+                console.log('🔍 Food items:', foodData.foods);
+                
+                if (foodData.foods.length === 0) {
+                    console.log('❌ No food found, showing empty message');
+                    container.innerHTML = '<div class="empty">😔 No food available in Solapur District yet</div>';
+                } else {
+                    console.log('✅ Food found, grouping by area');
+                    // Group food by area first, then taluka as fallback
+                    const grouped = {};
+                    const ngoLocalArea = ngoArea.toLowerCase();
+                    
+                    foodData.foods.forEach(food => {
+                        const foodArea = (food.area || food.taluka || 'Unknown Location').toLowerCase();
+                        const key = food.area || food.taluka || 'Unknown Location';
+                        
+                        // Mark local area with priority
+                        if (foodArea === ngoLocalArea) {
+                            key = '🏠 ' + key + ' (Your Area)';
+                        }
+                        
+                        console.log('🔍 Grouping food:', food.title, '->', key);
+                        if (!grouped[key]) {
+                            grouped[key] = [];
+                        }
+                        grouped[key].push(food);
+                    });
+                    
+                    console.log('🔍 Grouped food:', grouped);
+
+                    // Create HTML with grouped sections
+                    let html = '';
+                    let globalIndex = 0;
+                    console.log('🔍 Creating HTML for grouped food');
+                    
+                    // Sort to show local area first, then other areas alphabetically
+                    const sortedLocations = Object.keys(grouped).sort((a, b) => {
+                        const aIsLocal = a.includes('🏠');
+                        const bIsLocal = b.includes('🏠');
+                        
+                        if (aIsLocal && !bIsLocal) return -1;
+                        if (!aIsLocal && bIsLocal) return 1;
+                        
+                        // Remove 🏠 prefix for alphabetical sorting
+                        const aClean = a.replace('🏠 ', '').replace(' (Your Area)', '');
+                        const bClean = b.replace('🏠 ', '').replace(' (Your Area)', '');
+                        return aClean.localeCompare(bClean);
+                    });
+                    
+                    console.log('🔍 Sorted locations:', sortedLocations);
+                    
+                    sortedLocations.forEach(location => {
+                        console.log('🔍 Creating section for:', location, 'with', grouped[location].length, 'items');
+                        
+                        html += `
+                            <div style="margin-bottom: 40px;">
+                                <h2 style="background: linear-gradient(135deg, #4CAF50, #45a049); color: white; padding: 15px 25px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3); display: flex; align-items: center; gap: 10px;">
+                                    📍 ${location}
+                                    <span style="background: rgba(255,255,255,0.2); padding: 5px 15px; border-radius: 20px; font-size: 14px; margin-left: auto;">
+                                        ${grouped[location].length} items
+                                    </span>
+                                </h2>
+                                <div class="food-grid">
+                                    ${grouped[location].map(food => createFoodCard(food, globalIndex++)).join('')}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    console.log('🔍 Final HTML length:', html.length);
+                    console.log('🔍 Final HTML preview:', html.substring(0, 200) + '...');
+                    
+                    container.innerHTML = html;
+                    console.log('✅ HTML set to container');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alertBox.className = 'alert alert-error';
+                alertBox.innerHTML = '❌ Network error: ' + error.message;
+            }
+        }
+
+        async function loadClaimedFood() {
+            if (!currentNGO) {
+                alert('Please login first');
+                return;
+            }
+
+            const container = document.getElementById('claimedContainer');
+            
+            try {
+                const response = await fetch('/api/ngo/my-claims?email=' + encodeURIComponent(currentNGO.email));
+                const data = await response.json();
+
+                if (!response.ok) {
+                    container.innerHTML = '<div class="empty">❌ Error loading claimed food</div>';
+                    return;
+                }
+
+                if (data.claims.length === 0) {
+                    container.innerHTML = '<div class="empty">📦 You haven\'t claimed any food yet</div>';
+                } else {
+                    container.innerHTML = '<div class="food-grid">' + 
+                        data.claims.map((food, index) => createFoodCard(food, index)).join('') + 
+                        '</div>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                container.innerHTML = '<div class="empty">❌ Network error: ' + error.message + '</div>';
+            }
+        }
+
+        // AI Summary Dashboard
+        function showAISummary(foods) {
+            if (!foods || foods.length === 0) return;
+            
+            const summaryDiv = document.createElement('div');
+            summaryDiv.style.cssText = 'background: linear-gradient(135deg, #E3F2FD, #BBDEFB); border: 2px solid #2196F3; border-radius: 15px; padding: 20px; margin: 20px 0; box-shadow: 0 4px 20px rgba(33, 150, 243, 0.3);';
+            
+            // Count recommendations
+            let humansCount = 0, animalsCount = 0, wasteCount = 0;
+            let highPriorityCount = 0, mediumPriorityCount = 0, lowPriorityCount = 0;
+            
+            foods.forEach(food => {
+                if (food.ai_recommendation) {
+                    const dest = food.ai_recommendation.destination.toLowerCase();
+                    const priority = food.ai_recommendation.priority.toLowerCase();
+                    
+                    if (dest === 'humans') humansCount++;
+                    else if (dest === 'animals') animalsCount++;
+                    else if (dest === 'compost/waste') wasteCount++;
+                    
+                    if (priority.includes('high')) highPriorityCount++;
+                    else if (priority.includes('medium')) mediumPriorityCount++;
+                    else if (priority.includes('low')) lowPriorityCount++;
+                }
+            });
+            
+            summaryDiv.innerHTML = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: #1976D2; font-size: 20px;">🤖 AI Distribution Summary</h3>
+                    <p style="margin: 5px 0; color: #666; font-size: 14px;">Smart recommendations for ${foods.length} food items</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <!-- Destinations -->
+                    <div style="background: white; padding: 15px; border-radius: 10px; text-align: center; border-left: 4px solid #4CAF50;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">👥</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #4CAF50;">${humansCount}</div>
+                        <div style="font-size: 12px; color: #666;">For Humans</div>
+                    </div>
+                    
+                    <div style="background: white; padding: 15px; border-radius: 10px; text-align: center; border-left: 4px solid #FF9800;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">🐕</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #FF9800;">${animalsCount}</div>
+                        <div style="font-size: 12px; color: #666;">For Animals</div>
+                    </div>
+                    
+                    <div style="background: white; padding: 15px; border-radius: 10px; text-align: center; border-left: 4px solid #F44336;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">🗑️</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #F44336;">${wasteCount}</div>
+                        <div style="font-size: 12px; color: #666;">For Compost</div>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+                    <div style="background: #FFEBEE; padding: 10px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 16px;">🔴</div>
+                        <div style="font-size: 14px; font-weight: bold; color: #F44336;">${highPriorityCount}</div>
+                        <div style="font-size: 10px; color: #666;">High Priority</div>
+                    </div>
+                    
+                    <div style="background: #FFF3E0; padding: 10px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 16px;">🟡</div>
+                        <div style="font-size: 14px; font-weight: bold; color: #FF9800;">${mediumPriorityCount}</div>
+                        <div style="font-size: 10px; color: #666;">Medium Priority</div>
+                    </div>
+                    
+                    <div style="background: #E8F5E9; padding: 10px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 16px;">🟢</div>
+                        <div style="font-size: 14px; font-weight: bold; color: #4CAF50;">${lowPriorityCount}</div>
+                        <div style="font-size: 10px; color: #666;">Low Priority</div>
+                    </div>
+                </div>
+            `;
+            
+            // Insert at the beginning of food container
+            const container = document.getElementById('foodContainer');
+            container.insertBefore(summaryDiv, container.firstChild);
+        }
+
+        // Helper function for priority colors
+        function getPriorityColor(priority) {
+            switch(priority.toLowerCase()) {
+                case 'high priority': return '#F44336';
+                case 'medium priority': return '#FF9800';
+                case 'low priority': return '#4CAF50';
+                case 'very low priority': return '#9E9E9E';
+                default: return '#666';
+            }
+        }
+
+        // Helper function for priority icons
+        function getPriorityIcon(priority) {
+            switch(priority.toLowerCase()) {
+                case 'high priority': return '🔴';
+                case 'medium priority': return '🟡';
+                case 'low priority': return '🟢';
+                case 'very low priority': return '⚪';
+                default: return '🔵';
+            }
+        }
+
+        // Helper function for destination colors
+        function getDestinationColor(destination) {
+            switch(destination.toLowerCase()) {
+                case 'humans': return '#4CAF50';
+                case 'animals': return '#FF9800';
+                case 'compost/waste': return '#F44336';
+                default: return '#666';
+            }
+        }
+
+        // Helper function for destination icons
+        function getDestinationIcon(destination) {
+            switch(destination.toLowerCase()) {
+                case 'humans': return '👥';
+                case 'animals': return '🐕';
+                case 'compost/waste': return '🗑️';
+                default: return '❓';
+            }
+        }
+
+        // AI-based food recommendation system - FIXED VERSION
+        function getAIRecommendation(food) {
+            const now = new Date();
+            const expiry = new Date(food.expiry_time);
+            const created = new Date(food.created_at);
+            
+            // Calculate time remaining in hours
+            const hoursRemaining = (expiry - now) / (1000 * 60 * 60);
+            const minutesRemaining = Math.floor(((expiry - now) % (1000 * 60 * 60)) / (1000 * 60));
+            
+            console.log(`🤖 AI Analysis for ${food.title}:`);
+            console.log(`   Hours remaining: ${hoursRemaining.toFixed(1)}`);
+            console.log(`   Food type: ${food.food_type}`);
+            
+            // CRITICAL FIX: Show debug alert
+            alert(`🤖 AI FIXED: ${food.title} - ${hoursRemaining.toFixed(1)}h remaining - Type: ${food.food_type}`);
+            
+            // AI Logic for recommendation - CORRECTED
+            let recommendation = {
+                type: 'humans',
+                priority: 'high',
+                message: '',
+                color: '#4CAF50',
+                icon: '👥',
+                action: 'Suitable for human consumption'
+            };
+            
+            // Food type detection
+            const isCooked = food.food_type.toLowerCase().includes('cooked');
+            const isRaw = food.food_type.toLowerCase().includes('raw');
+            const isBakery = food.food_type.toLowerCase().includes('bakery') || food.food_type.toLowerCase().includes('bread');
+            
+            // CORRECTED LOGIC: Cooked food always goes to humans first
+            if (hoursRemaining > 24) {
+                recommendation.type = 'humans';
+                recommendation.priority = 'high';
+                recommendation.message = `Excellent for human consumption! ${Math.floor(hoursRemaining)}+ hours remaining.`;
+                recommendation.color = '#4CAF50';
+                recommendation.icon = '👥';
+                recommendation.action = 'Distribute to humans immediately';
+            } else if (hoursRemaining > 12) {
+                recommendation.type = 'humans';
+                recommendation.priority = 'medium';
+                recommendation.message = `Good for human consumption. ${Math.floor(hoursRemaining)} hours remaining.`;
+                recommendation.color = '#FF9800';
+                recommendation.icon = '👥';
+                recommendation.action = 'Distribute to humans soon';
+            } else if (hoursRemaining > 2) {
+                // FIXED: All cooked food between 2-24 hours goes to humans
+                recommendation.type = 'humans';
+                recommendation.priority = 'urgent';
+                recommendation.message = `URGENT: Only ${Math.floor(hoursRemaining)} hours ${minutesRemaining}m left for human consumption!`;
+                recommendation.color = '#F44336';
+                recommendation.icon = '⚠️';
+                recommendation.action = 'Distribute to humans immediately';
+            } else if (hoursRemaining > 0) {
+                // FIXED: Cooked food still goes to humans even if < 2 hours
+                if (isCooked) {
+                    recommendation.type = 'humans';
+                    recommendation.priority = 'urgent';
+                    recommendation.message = `CRITICAL: Only ${Math.floor(hoursRemaining)}h ${minutesRemaining}m left! Distribute to humans immediately!`;
+                    recommendation.color = '#F44336';
+                    recommendation.icon = '🚨';
+                    recommendation.action = 'Distribute to humans immediately or risk waste';
+                } else if (isBakery || isRaw) {
+                    recommendation.type = 'animals';
+                    recommendation.priority = 'high';
+                    recommendation.message = `Good for animal feed. Only ${Math.floor(hoursRemaining)}h ${minutesRemaining}m remaining.`;
+                    recommendation.color = '#2196F3';
+                    recommendation.icon = '🐕';
+                    recommendation.action = 'Give to animals immediately';
+                } else {
+                    recommendation.type = 'compost';
+                    recommendation.priority = 'medium';
+                    recommendation.message = `Best for composting. ${Math.floor(hoursRemaining)}h ${minutesRemaining}m remaining.`;
+                    recommendation.color = '#795548';
+                    recommendation.icon = '🌱';
+                    recommendation.action = 'Use for compost/waste';
+                }
+            } else {
+                recommendation.type = 'compost';
+                recommendation.priority = 'high';
+                recommendation.message = `EXPIRED: Best for composting. Expired ${Math.abs(Math.floor(hoursRemaining))} hours ago.`;
+                recommendation.color = '#795548';
+                recommendation.icon = '🗑️';
+                recommendation.action = 'Compost or dispose properly';
+            }
+            
+            console.log(`🤖 AI FINAL Recommendation:`, recommendation);
+            return recommendation;
+        }
+
+        function createFoodCard(food, index = 0) {
+            console.log('🔍 Creating food card for:', food.title);
+            
+            const expiry = new Date(food.expiry_time);
+            const created = new Date(food.created_at);
+            const now = new Date();
+            
+            // Calculate countdown
+            const timeRemaining = expiry - now;
+            const hoursRemaining = Math.floor(timeRemaining / (1000 * 60 * 60));
+            const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+            
+            // Format countdown display
+            let countdownDisplay = '';
+            let countdownColor = '';
+            if (timeRemaining > 0) {
+                if (hoursRemaining > 24) {
+                    countdownDisplay = `⏰ ${hoursRemaining}h ${minutesRemaining}m remaining`;
+                    countdownColor = '#4CAF50';
+                } else if (hoursRemaining > 6) {
+                    countdownDisplay = `⏰ ${hoursRemaining}h ${minutesRemaining}m remaining`;
+                    countdownColor = '#FF9800';
+                } else if (hoursRemaining > 0) {
+                    countdownDisplay = `🔴 URGENT: ${hoursRemaining}h ${minutesRemaining}m remaining`;
+                    countdownColor = '#F44336';
+                } else {
+                    countdownDisplay = `🔴 EXPIRED: ${Math.abs(hoursRemaining)}h ${minutesRemaining}m ago`;
+                    countdownColor = '#9E9E9E';
+                }
+            } else {
+                countdownDisplay = `🔴 EXPIRED`;
+                countdownColor = '#9E9E9E';
+            }
+            
+            const expiryFormatted = expiry.toLocaleString();
+            const createdFormatted = created.toLocaleString();
+            
+            // AI-based recommendation system - using backend data
+            const recommendation = food.ai_recommendation || null;
+            
+            // Status display with emojis
+            let statusDisplay = '';
+            let statusEmoji = '';
+            switch(food.status) {
+                case 'available':
+                    statusDisplay = '🟢 AVAILABLE';
+                    statusEmoji = '🟢';
+                    break;
+                case 'claimed':
+                    statusDisplay = '🟡 CLAIMED';
+                    statusEmoji = '🟡';
+                    break;
+                case 'picked_up':
+                    statusDisplay = '🔵 PICKED UP';
+                    statusEmoji = '🔵';
+                    break;
+                default:
+                    statusDisplay = food.status.toUpperCase();
+            }
+            
+            // Location display - show taluka and area
+            let locationDisplay = '';
+            if (food.taluka && food.area) {
+                locationDisplay = `📍 ${food.taluka} → ${food.area}`;
+            } else if (food.area) {
+                locationDisplay = `📍 ${food.area}`;
+            } else {
+                locationDisplay = '📍 Location not specified';
+            }
+            
+            return `
+                <div class="food-card fade-in-up" style="animation-delay: ${index * 0.1}s;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">${statusEmoji} ${food.title}</h3>
+                        <span class="status ${food.status}">${statusDisplay}</span>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #FF9800, #F57C00); color: white; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);">
+                        ${locationDisplay}
+                    </div>
+                    <p><strong>📝 Description:</strong> ${food.description}</p>
+                    <p><strong>🍽️ Type:</strong> ${food.food_type}</p>
+                    <p><strong>📦 Quantity:</strong> ${food.quantity}</p>
+                    <p><strong>⏰ Expiry:</strong> <span style="color: ${countdownColor}; font-weight: bold;">${countdownDisplay}</span></p>
+                    <p style="font-size: 12px; color: #999;">📅 Full expiry: ${expiryFormatted}</p>
+                    <p><strong>🏠 Pickup Address:</strong> ${food.pickup_address}</p>
+                    <p><strong>📞 Contact:</strong> ${food.contact_person_name || 'N/A'} - ${food.contact_person_phone || 'N/A'}</p>
+                    <p><strong>👤 Donor:</strong> ${food.donor ? food.donor.name : 'Unknown'}</p>
+                    <p><strong>🔑 Pickup Code:</strong> <strong style="font-size: 24px; color: #4CAF50; letter-spacing: 2px;">${food.pickup_code}</strong></p>
+                    
+                    <!-- Enhanced AI Recommendation Section -->
+                    <div style="background: linear-gradient(135deg, #E8F5E8, #C8E6C9); border: 3px solid #4CAF50; border-radius: 15px; padding: 20px; margin: 20px 0; box-shadow: 0 4px 20px rgba(76, 175, 80, 0.3);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px; border-bottom: 2px solid #4CAF50; padding-bottom: 10px;">
+                            <span style="font-size: 32px; background: linear-gradient(45deg, #4CAF50, #8BC34A); border-radius: 50%; padding: 8px;">🤖</span>
+                            <h4 style="margin: 0; color: #2E7D32; font-size: 18px; font-weight: bold;">AI Smart Distribution Recommendation</h4>
+                            <span style="margin-left: auto; background: #4CAF50; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">POWERED BY AI</span>
+                        </div>
+                        ${food.ai_recommendation ? `
+                            <div style="margin: 15px 0;">
+                                <!-- Destination with Icon -->
+                                <div style="display: flex; align-items: center; gap: 10px; margin: 12px 0; padding: 12px; background: white; border-radius: 10px; border-left: 4px solid ${getDestinationColor(food.ai_recommendation.destination)};">
+                                    <span style="font-size: 24px;">${getDestinationIcon(food.ai_recommendation.destination)}</span>
+                                    <div style="flex: 1;">
+                                        <p style="margin: 0; font-weight: bold; color: #2E7D32; font-size: 16px;">
+                                            🎯 Recommended Destination: <span style="color: ${getDestinationColor(food.ai_recommendation.destination)}; font-size: 18px;">${food.ai_recommendation.destination}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Priority with Color Coding -->
+                                <div style="display: flex; align-items: center; gap: 10px; margin: 12px 0; padding: 12px; background: white; border-radius: 10px;">
+                                    <span style="font-size: 20px;">${getPriorityIcon(food.ai_recommendation.priority)}</span>
+                                    <div style="flex: 1;">
+                                        <p style="margin: 0; font-weight: bold;">
+                                            🚨 Priority Level: <span style="color: ${getPriorityColor(food.ai_recommendation.priority)}; font-size: 16px; text-transform: uppercase;">${food.ai_recommendation.priority}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Reason -->
+                                <div style="margin: 12px 0; padding: 12px; background: #F1F8E9; border-radius: 10px; border-left: 4px solid #8BC34A;">
+                                    <p style="margin: 0; font-style: italic; color: #555; font-size: 14px;">
+                                        💡 <strong>AI Reasoning:</strong> ${food.ai_recommendation.reason}
+                                    </p>
+                                </div>
+                                
+                                <!-- Action Required -->
+                                <div style="margin: 12px 0; padding: 12px; background: #FFF3E0; border-radius: 10px; border-left: 4px solid #FF9800;">
+                                    <p style="margin: 0; font-size: 14px; font-weight: bold; color: #E65100;">
+                                        ⚡ <strong>Action Required:</strong> ${food.ai_recommendation.action_needed}
+                                    </p>
+                                </div>
+                                
+                                <!-- Confidence Score -->
+                                <div style="margin: 12px 0; padding: 12px; background: #E3F2FD; border-radius: 10px; border-left: 4px solid #2196F3;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 20px;">📊</span>
+                                        <div style="flex: 1;">
+                                            <p style="margin: 0; font-size: 12px; color: #555;">
+                                                AI Confidence Score
+                                            </p>
+                                            <div style="background: #E0E0E0; height: 8px; border-radius: 4px; margin: 5px 0;">
+                                                <div style="background: linear-gradient(90deg, #4CAF50, #8BC34A); height: 100%; border-radius: 4px; width: ${food.ai_recommendation.confidence * 100}%;"></div>
+                                            </div>
+                                            <p style="margin: 0; font-size: 14px; font-weight: bold; color: #1976D2;">
+                                                ${(food.ai_recommendation.confidence * 100).toFixed(1)}% Accuracy
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : `
+                            <div style="text-align: center; padding: 20px; color: #666;">
+                                <span style="font-size: 48px;">🤷‍♂️</span>
+                                <p style="margin: 10px 0; font-size: 16px;">AI Analysis Not Available</p>
+                                <p style="margin: 5px 0; font-size: 12px; color: #999;">Please check back later for smart recommendations</p>
+                            </div>
+                        `}
+                    </div>
+                    
+                    <p style="font-size: 12px; color: #999; margin-top: 10px;">📅 Posted: ${createdFormatted}</p>
+                    ${food.status === 'available' ? 
+                        `<button class="claim" onclick="claimFood(${food.id})">🎯 Claim This Food</button>` : 
+                        food.status === 'claimed' && food.claimed_by === currentNGO.id ?
+                        `<button class="verify" onclick="verifyPickup('${food.pickup_code}')">✅ Verify Pickup</button>` :
+                        '<p style="color: #999; margin-top: 15px;">Already claimed by another NGO</p>'
+                    }
+                </div>
+            `;
+        }
+
+        async function claimFood(foodId) {
+            if (!currentNGO) {
+                alert('Please login first');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to claim this food?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/food/claim-test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        food_id: foodId,
+                        ngo_email: currentNGO.email
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('✅ Food claimed successfully!\n\nPickup Code: ' + result.food.pickup_code);
+                    loadFood(); // Reload
+                } else {
+                    alert('❌ Failed to claim food: ' + result.message);
+                }
+            } catch (error) {
+                alert('❌ Error claiming food: ' + error.message);
+            }
+        }
+
+        function verifyPickup(pickupCode) {
+            alert(`✅ Pickup verified successfully!\n\nPickup Code: ${pickupCode}\n\nPlease collect the food from the donor location.`);
+        }
+
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        async function loadNotifications() {
+            if (!currentNGO) return;
+
+            try {
+                const response = await fetch('/api/notifications?email=' + encodeURIComponent(currentNGO.email));
+                const data = await response.json();
+
+                if (response.ok) {
+                    updateNotificationUI(data);
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+
+        function updateNotificationUI(data) {
+            const badge = document.getElementById('notificationBadge');
+            const list = document.getElementById('notificationList');
+
+            badge.textContent = data.unread_count || 0;
+
+            if (data.notifications && data.notifications.length > 0) {
+                list.innerHTML = data.notifications.map(notification => `
+                    <div class="notification-item ${notification.is_read ? '' : 'unread'}" onclick="markNotificationRead(${notification.id})">
+                        <div class="notification-title">${notification.title}</div>
+                        <div class="notification-message">${notification.message}</div>
+                        <div class="notification-time">${new Date(notification.created_at).toLocaleString()}</div>
+                    </div>
+                `).join('');
+            } else {
+                list.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No notifications yet</div>';
+            }
+        }
+
+        async function markNotificationRead(notificationId) {
+            try {
+                await fetch('/api/notifications/mark-read', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ notification_id: notificationId })
+                });
+                loadNotifications(); // Reload
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
+
+        // Close notification dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const bell = document.getElementById('notificationBell');
+            const dropdown = document.getElementById('notificationDropdown');
+            
+            if (!bell.contains(event.target) && !dropdown.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // Initialize page background
+        function initPageBackground() {
+            const pageBg = document.getElementById('pageBg');
+            const bgImages = [
+                'https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1920&h=1080&fit=crop',
+                'https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920&h=1080&fit=crop',
+                'https://images.unsplash.com/photo-1593113646773-028c64a8f1b8?w=1920&h=1080&fit=crop',
+                'https://images.unsplash.com/photo-1509099863731-ef4bff19e808?w=1920&h=1080&fit=crop',
+                'https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=1920&h=1080&fit=crop',
+                'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=1920&h=1080&fit=crop'
+            ];
+            
+            const randomBg = bgImages[Math.floor(Math.random() * bgImages.length)];
+            pageBg.style.backgroundImage = `url(${randomBg})`;
+            
+            setTimeout(() => {
+                pageBg.classList.add('active');
+            }, 100);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initPageBackground();
+        });
+    </script>
+</body>
+</html>

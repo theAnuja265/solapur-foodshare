@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage NGOs - Admin Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 250px;
+            height: 100vh;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .sidebar h2 {
+            color: #4CAF50;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #34495e;
+        }
+        .sidebar a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        .sidebar a:hover {
+            background: #34495e;
+            padding-left: 20px;
+        }
+        .sidebar a.active {
+            background: #34495e;
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            color: #2c3e50;
+        }
+        .header .actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #45a049;
+        }
+        .btn-secondary {
+            background: #2196F3;
+            color: white;
+        }
+        
+        /* Search and Filter */
+        .search-filter {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .search-filter input,
+        .search-filter select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .search-filter input {
+            flex: 1;
+        }
+        
+        /* NGO Table */
+        .ngo-table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .btn-edit {
+            background: #2196F3;
+            color: white;
+        }
+        .btn-delete {
+            background: #f44336;
+            color: white;
+        }
+        .btn-view {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <h2>🍽️ Admin Panel</h2>
+        <a href="/admin/dashboard">📊 Dashboard</a>
+        <a href="/admin/ngos" class="active">🏢 Manage NGOs</a>
+        <a href="/admin/donors">👥 Manage Donors</a>
+        <a href="/admin/food">🍲 All Food Items</a>
+        <a href="/admin/bulk-upload">📤 Bulk Upload</a>
+        <a href="/admin/reports">📈 Reports</a>
+        <a href="/admin/settings">⚙️ Settings</a>
+        <a href="/">🏠 Back to Website</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="header">
+            <h1>🏢 Manage NGOs</h1>
+            <div class="actions">
+                <a href="/admin/bulk-upload" class="btn btn-secondary">📤 Bulk Upload</a>
+                <button class="btn btn-primary" onclick="exportNGOs()">📥 Export CSV</button>
+            </div>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="search-filter">
+            <input type="text" id="searchInput" placeholder="🔍 Search by name, email, or organization..." onkeyup="filterNGOs()">
+            <select id="areaFilter" onchange="filterNGOs()">
+                <option value="">All Areas</option>
+                <option value="Solapur City">Solapur City</option>
+                <option value="Pandharpur">Pandharpur</option>
+                <option value="Akkalkot">Akkalkot</option>
+                <option value="Barshi">Barshi</option>
+                <option value="Karmala">Karmala</option>
+                <option value="Madha">Madha</option>
+                <option value="Malshiras">Malshiras</option>
+                <option value="Mangalvedhe">Mangalvedhe</option>
+                <option value="Mohol">Mohol</option>
+                <option value="North Solapur">North Solapur</option>
+                <option value="South Solapur">South Solapur</option>
+            </select>
+        </div>
+
+        <!-- NGO Table -->
+        <div class="ngo-table-container">
+            <table id="ngoTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Organization Name</th>
+                        <th>Contact Person</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Area</th>
+                        <th>Capacity</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="ngoTableBody">
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📭</div>
+                                <h3>Loading NGOs...</h3>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let allNGOs = [];
+
+        async function loadNGOs() {
+            try {
+                const response = await fetch('/api/admin/ngos');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    allNGOs = data.ngos || [];
+                    displayNGOs(allNGOs);
+                } else {
+                    showError('Failed to load NGOs');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Network error');
+            }
+        }
+
+        function displayNGOs(ngos) {
+            const tbody = document.getElementById('ngoTableBody');
+            
+            if (ngos.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📭</div>
+                                <h3>No NGOs found</h3>
+                                <p>Start by uploading NGOs using bulk upload</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = ngos.map(ngo => `
+                <tr>
+                    <td>${ngo.id}</td>
+                    <td><strong>${ngo.organization_name || 'N/A'}</strong></td>
+                    <td>${ngo.name}</td>
+                    <td>${ngo.email}</td>
+                    <td>${ngo.phone}</td>
+                    <td>${ngo.area}</td>
+                    <td>${ngo.capacity || 'N/A'}</td>
+                    <td>
+                        <span class="status-badge status-active">Active</span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-small btn-view" onclick="viewNGO(${ngo.id})">👁️ View</button>
+                            <button class="btn-small btn-edit" onclick="editNGO(${ngo.id})">✏️ Edit</button>
+                            <button class="btn-small btn-delete" onclick="deleteNGO(${ngo.id})">🗑️ Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterNGOs() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const areaFilter = document.getElementById('areaFilter').value;
+            
+            let filtered = allNGOs;
+            
+            if (searchTerm) {
+                filtered = filtered.filter(ngo => 
+                    ngo.name.toLowerCase().includes(searchTerm) ||
+                    ngo.email.toLowerCase().includes(searchTerm) ||
+                    (ngo.organization_name && ngo.organization_name.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            if (areaFilter) {
+                filtered = filtered.filter(ngo => ngo.area === areaFilter);
+            }
+            
+            displayNGOs(filtered);
+        }
+
+        function viewNGO(id) {
+            const ngo = allNGOs.find(n => n.id === id);
+            if (ngo) {
+                alert(`NGO Details:\n\nName: ${ngo.name}\nOrganization: ${ngo.organization_name}\nEmail: ${ngo.email}\nPhone: ${ngo.phone}\nArea: ${ngo.area}\nAddress: ${ngo.address}\nCapacity: ${ngo.capacity || 'N/A'}`);
+            }
+        }
+
+        function editNGO(id) {
+            alert('Edit functionality coming soon!');
+        }
+
+        async function deleteNGO(id) {
+            if (!confirm('Are you sure you want to delete this NGO?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/admin/ngos/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    alert('NGO deleted successfully!');
+                    loadNGOs();
+                } else {
+                    alert('Failed to delete NGO');
+                }
+            } catch (error) {
+                alert('Network error');
+            }
+        }
+
+        function exportNGOs() {
+            if (allNGOs.length === 0) {
+                alert('No NGOs to export');
+                return;
+            }
+            
+            const csv = [
+                ['ID', 'Name', 'Email', 'Phone', 'Area', 'Organization', 'Capacity'].join(','),
+                ...allNGOs.map(ngo => [
+                    ngo.id,
+                    ngo.name,
+                    ngo.email,
+                    ngo.phone,
+                    ngo.area,
+                    ngo.organization_name || '',
+                    ngo.capacity || ''
+                ].join(','))
+            ].join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ngos_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+
+        function showError(message) {
+            const tbody = document.getElementById('ngoTableBody');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">❌</div>
+                            <h3>${message}</h3>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Load NGOs on page load
+        loadNGOs();
+    </script>
+</body>
+</html>

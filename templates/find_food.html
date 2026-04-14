@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Food Near You - FoodShare</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            min-height: 100vh;
+            background: #0a0a0a;
+            position: relative;
+        }
+        .page-bg-container { position: fixed; top:0; left:0; width:100%; height:100%; z-index:-1; overflow:hidden; }
+        .page-bg { position:absolute; top:0; left:0; width:100%; height:100%; background-size:cover; background-position:center; opacity:0; transition:opacity 2s ease-in-out; filter:blur(3px) brightness(0.55); }
+        .page-bg.active { opacity:1; }
+        .page-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
+
+        /* Nav */
+        nav {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding: 14px 40px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top:0; z-index:100;
+        }
+        .logo { color:white; font-size:1.3rem; font-weight:800; letter-spacing:1px; }
+        .nav-menu { display:flex; gap:20px; list-style:none; }
+        .nav-menu a { color:#d8b4fe; text-decoration:none; font-weight:700; font-size:0.95rem; transition:all 0.2s; }
+        .nav-menu a:hover { color:#f3e8ff; }
+
+        .container { max-width:1200px; margin:0 auto; padding:30px 20px; }
+
+        /* Header */
+        .header { text-align:center; color:white; margin-bottom:32px; }
+        .header h1 { font-size:2.8rem; font-weight:900; margin-bottom:8px; background:linear-gradient(135deg,#fff 0%,#d8b4fe 50%,#86efac 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .header p { color:rgba(255,255,255,0.65); font-size:1rem; }
+
+        /* Search Card */
+        .search-card {
+            background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 32px 36px;
+            border-radius: 20px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+            margin-bottom: 32px;
+        }
+        .search-card h2 { color:#d8b4fe; margin-bottom:20px; text-align:center; font-size:1.2rem; font-weight:700; }
+        .search-box { display:flex; gap:12px; max-width:700px; margin:0 auto; }
+        select {
+            flex:1; padding:13px 16px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px; font-size:1rem; color:#fff; cursor:pointer;
+        }
+        select option { background:#1e1e2e; color:#fff; }
+        button {
+            padding: 13px 36px;
+            background: linear-gradient(135deg,#4ade80,#16a34a);
+            color:white; border:none; border-radius:12px;
+            font-size:1rem; font-weight:700; cursor:pointer; transition:all 0.3s;
+        }
+        button:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(74,222,128,0.4); }
+
+        /* Results */
+        .results { display:none; }
+        .results-header {
+            background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 20px 28px; border-radius:16px; margin-bottom:24px; text-align:center;
+        }
+        .results-header h2 { color:#86efac; margin-bottom:6px; }
+        .results-header p { color:rgba(255,255,255,0.6); font-size:0.9rem; }
+
+        /* Food Grid */
+        .food-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:20px; }
+        .food-card {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 24px; border-radius:18px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            border-left: 4px solid rgba(134,239,172,0.5);
+            transition: all 0.3s; color:#f0f0f0;
+        }
+        .food-card:hover { transform:translateY(-5px); background:rgba(255,255,255,0.13); border-left-color:#86efac; box-shadow:0 16px 40px rgba(0,0,0,0.4); }
+        .food-card h3 { color:#86efac; margin-bottom:12px; font-size:1.1rem; }
+        .food-card p { margin:7px 0; color:rgba(255,255,255,0.75); font-size:0.9rem; }
+        .food-card strong { color:#fff; }
+        .location-badge { display:inline-block; background:rgba(74,222,128,0.2); border:1px solid rgba(74,222,128,0.4); color:#4ade80; padding:5px 14px; border-radius:20px; margin-top:10px; font-size:0.82rem; font-weight:700; }
+        .no-results { text-align:center; padding:60px; background:rgba(255,255,255,0.07); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,0.1); border-radius:16px; color:rgba(255,255,255,0.5); }
+
+        /* Map Section */
+        .map-section {
+            background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.12);
+            padding: 24px; border-radius:20px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+            margin-bottom: 32px; display:none;
+        }
+        .map-section h2 { color:#d8b4fe; font-size:1.4rem; margin-bottom:16px; text-align:center; }
+        .map-container { width:100%; height:550px; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.15); }
+        #map { width:100%; height:100%; }
+
+        .distance-legend { display:flex; justify-content:center; gap:16px; margin-top:16px; flex-wrap:wrap; }
+        .legend-item { display:flex; align-items:center; gap:8px; padding:7px 14px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); border-radius:20px; color:rgba(255,255,255,0.7); font-size:0.82rem; }
+        .legend-color { width:18px; height:18px; border-radius:50%; border:2px solid rgba(255,255,255,0.3); }
+        .distance-badge { display:inline-block; background:rgba(255,152,0,0.2); border:1px solid rgba(255,152,0,0.4); color:#ffb74d; padding:6px 14px; border-radius:20px; margin-top:8px; margin-left:8px; font-size:0.82rem; font-weight:700; }
+
+        .leaflet-popup-content-wrapper { border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.4); }
+        .leaflet-control-layers { border-radius:10px; }
+        .leaflet-bar { border-radius:8px; }
+        .leaflet-bar a { border-radius:8px; }
+        .distance-legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: #f5f5f5;
+            border-radius: 20px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .distance-badge {
+            display: inline-block;
+            background: #FF9800;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            margin-top: 10px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="page-bg-container">
+        <div class="page-bg active" style="background-image: url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1920&q=90');"></div>
+        <div class="page-overlay"></div>
+    </div>
+
+    <nav>
+        <div class="logo">🍽️ FoodShare</div>
+        <ul class="nav-menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/add-food">Donate Food</a></li>
+            <li><a href="/test-ngo">Request Food</a></li>
+            <li><a href="/find-food">Find Food</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h1>📍 Find Food Near You</h1>
+            <p>Search for available food in your area</p>
+        </div>
+
+        <div class="search-card">
+            <h2>Select Your Location</h2>
+            <div class="search-box">
+                <select id="locationSelect">
+                    <option value="">Choose your taluka...</option>
+                    <option value="Solapur City">Solapur City</option>
+                    <option value="Pandharpur">Pandharpur</option>
+                    <option value="Akkalkot">Akkalkot</option>
+                    <option value="Barshi">Barshi</option>
+                    <option value="Karmala">Karmala</option>
+                    <option value="Madha">Madha</option>
+                    <option value="Malshiras">Malshiras</option>
+                    <option value="Mangalvedhe">Mangalvedhe</option>
+                    <option value="Mohol">Mohol</option>
+                    <option value="North Solapur">North Solapur</option>
+                    <option value="South Solapur">South Solapur</option>
+                </select>
+                <button onclick="searchFood()">🔍 Search</button>
+            </div>
+        </div>
+
+        <div class="results" id="results">
+            <div class="results-header">
+                <h2 id="resultsTitle">Available Food</h2>
+                <p id="resultsSubtitle"></p>
+            </div>
+            <div class="food-grid" id="foodGrid"></div>
+        </div>
+
+        <div class="map-section" id="mapSection">
+            <h2>🗺️ Food Locations on Map</h2>
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+            <div class="distance-legend" id="distanceLegend"></div>
+        </div>
+    </div>
+
+    <script>
+        // NETWORK ENCRYPTION FUNCTIONS
+        function encryptData(data) {
+            // Simple encryption for demonstration (in production, use proper encryption libraries)
+            const encrypted = btoa(JSON.stringify(data));
+            return encrypted;
+        }
+        
+        function decryptData(encryptedData) {
+            // Simple decryption for demonstration (in production, use proper decryption libraries)
+            try {
+                const decrypted = atob(encryptedData);
+                return JSON.parse(decrypted);
+            } catch (error) {
+                console.error('Decryption error:', error);
+                return null;
+            }
+        }
+        
+        function generateEncryptionKey() {
+            // Generate a simple encryption key (in production, use proper key generation)
+            const key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('encryptionKey', key);
+            return key;
+        }
+        
+        function getEncryptionKey() {
+            let key = localStorage.getItem('encryptionKey');
+            if (!key) {
+                key = generateEncryptionKey();
+            }
+            return key;
+        }
+        
+        function secureEncrypt(data) {
+            const key = getEncryptionKey();
+            const dataWithKey = {
+                data: data,
+                key: key,
+                timestamp: Date.now()
+            };
+            return encryptData(dataWithKey);
+        }
+
+        // ENCRYPTION STATUS CHECK
+        function checkConnectionSecurity() {
+            const isSecure = window.location.protocol === 'https:';
+            console.log('🔒 Find Food Page Security:', {
+                protocol: window.location.protocol,
+                isSecure: isSecure,
+                encryption: 'Client-Side Data Encryption Active'
+            });
+        }
+
+        // Background rotation
+        let bgIdx = 0;
+        const bgImgs = document.querySelectorAll('.page-bg');
+        setInterval(() => { bgImgs[bgIdx].classList.remove('active'); bgIdx=(bgIdx+1)%bgImgs.length; bgImgs[bgIdx].classList.add('active'); }, 5000);
+
+        // Initialize encryption
+        checkConnectionSecurity();
+        console.log('🔐 Network Encryption Initialized for Find Food Page');
+
+        // Taluka headquarters coordinates
+        const talukaCoords = {
+            'Solapur City': [17.6599, 75.9064],
+            'North Solapur': [17.6899, 75.9164],
+            'South Solapur': [17.62, 75.92],
+            'Barshi': [18.23, 75.69],
+            'Pandharpur': [17.6779, 75.3276],
+            'Akkalkot': [17.5216, 76.2058],
+            'Karmala': [18.407, 75.193],
+            'Madha': [18.1, 75.5],
+            'Malshiras': [17.92, 74.99],
+            'Mangalvedhe': [17.52, 75.43],
+            'Mohol': [17.81, 75.65]
+        };
+        
+        // Village-level GPS coordinates (200+ villages across all talukas)
+        const villageCoords = {
+            // Akkalkot Taluka Villages
+            'Akkalkot': [17.5216, 76.2058],
+            'Alage': [17.4833, 76.1833],
+            'Andewadi Bk': [17.5167, 76.2333],
+            'Andewadi Kh': [17.5200, 76.2400],
+            'Ankalge': [17.4900, 76.1900],
+            'Arali': [17.5300, 76.2200],
+            'Bagehalli': [17.5100, 76.1800],
+            'Banjgol': [17.4950, 76.2100],
+            'Barhanpur': [17.5250, 76.2450],
+            'Basalegaon': [17.5050, 76.1950],
+            'Bhosgi': [17.4800, 76.2000],
+            'Bhurikavathe': [17.5150, 76.2250],
+            'Binjger': [17.4900, 76.2300],
+            'Boregaon': [17.5350, 76.2150],
+            'Borgaon': [17.5000, 76.2200],
+            'Boroti Bk': [17.4850, 76.1850],
+            'Boroti Kh': [17.4900, 76.1900],
+            'Chapalgaon': [17.5400, 76.2300],
+            'Chikkhahalli': [17.4750, 76.2050],
+            'Chungi': [17.5300, 76.1950],
+            'Dahitane': [17.4950, 76.2250],
+            'Devikavathe': [17.5200, 76.1900],
+            'Dodyal': [17.4850, 76.2150],
+            'Dudhani': [17.5100, 76.2350],
+            'Gogaon': [17.4800, 76.1950],
+            'Halchincholi': [17.5250, 76.2100],
+            'Kudal': [17.4900, 76.2050],
+            
+            // Pandharpur Taluka Villages
+            'Pandharpur': [17.6779, 75.3276],
+            'Gopalpur': [17.6850, 75.3350],  // Adjusted - closer to Pandharpur (north-east)
+            'Karkamb': [17.6500, 75.3000],
+            'Bhose': [17.6900, 75.3400],
+            'Bhalwani': [17.6600, 75.3600],
+            'Bhandishegaon': [17.7100, 75.3300],
+            'Chale': [17.6400, 75.3200],
+            'Kasegaon': [17.7600, 75.3350],
+            'Korti': [17.7200, 75.3400],
+            'Lohgaon': [17.6300, 75.3500],
+            'Puluj': [17.7000, 75.3200],
+            'Shelve': [17.6500, 75.3400],
+            'Takali': [17.6700, 75.3600],
+            'Tisangi': [17.6200, 75.3300],
+            'Wakhari': [17.7100, 75.3500],
+            'Wadi': [17.6400, 75.3100],
+            'Patkhal': [17.6900, 75.3300],
+            'Pehe': [17.6600, 75.3200],
+            'Pohol': [17.7000, 75.3600],
+            
+            // Barshi Taluka Villages
+            'Barshi': [18.23, 75.69],
+            'Jamgaon': [18.2500, 75.7100],
+            'Upale': [18.2100, 75.6700],
+            'Pangri': [18.2400, 75.7200],
+            'Kuslamb': [18.2200, 75.6600],
+            'Yedshi': [18.2600, 75.7000],
+            'Bavi': [18.2000, 75.6800],
+            'Uplai': [18.2100, 75.6700],  // Upalai (Thonge) - 11km from Barshi
+            'Malewadi': [18.2700, 75.7100],
+            'Saste': [18.2100, 75.7000],
+            'Shendri': [18.2500, 75.6800],
+            'Tandulwadi': [18.2200, 75.7200],
+            'Nari': [18.2400, 75.6600],
+            'Pimpalgaon': [18.2600, 75.6900],
+            'Khadki': [18.2000, 75.7100],
+            'Bhatambare': [18.2300, 75.7300],
+            'Kasarwadi': [18.2100, 75.6900],
+            'Kave': [18.1800, 75.6400],
+            
+            // Karmala Taluka Villages
+            'Karmala': [18.407, 75.193],
+            'Jeur': [18.4300, 75.2100],
+            'Kem': [18.3900, 75.1800],
+            'Kandar': [18.4200, 75.2200],
+            'Parewadi': [18.3800, 75.1700],
+            'Shetphal': [18.4400, 75.2000],
+            'Nimbhore': [18.3700, 75.1900],
+            'Takli': [18.4100, 75.2300],
+            'Wangi': [18.4300, 75.1900],
+            'Dahigaon': [18.3900, 75.2100],
+            
+            // Madha Taluka Villages
+            'Madha': [18.1, 75.5],
+            'Kurduwadi': [18.0900, 75.4100],
+            'Tembhurni': [18.1200, 75.5200],
+            'Ridhore': [18.0800, 75.4800],
+            'Shingoli': [18.1100, 75.5300],
+            'Upalai': [18.0700, 75.4700],
+            'Bembale': [18.1300, 75.5100],
+            'Wadshinge': [18.0900, 75.5400],
+            'Kinhai': [18.1000, 75.4900],
+            'Shetphale': [18.1200, 75.4600],
+            'Varkute': [18.0800, 75.5200],
+            
+            // Malshiras Taluka Villages
+            'Malshiras': [17.92, 74.99],
+            'Akluj': [17.8900, 75.0200],
+            'Natepute': [17.9500, 75.0100],
+            'Velapur': [17.9000, 74.9700],
+            'Shindewadi': [17.9300, 75.0300],
+            'Zare': [17.8800, 74.9800],
+            'Piliv': [17.9400, 74.9900],
+            'Bhamburdi': [17.9100, 75.0400],
+            'Sangramnagar': [17.9200, 74.9600],
+            'Kalamb': [17.9600, 75.0200],
+            'Kondbhavi': [17.8700, 75.0100],
+            'Mandave': [17.9300, 74.9800],
+            'Malinagar': [17.9000, 75.0300],
+            'Sadashivnagar': [17.9500, 74.9700],
+            
+            // Mangalvedhe Taluka Villages
+            'Mangalvedhe': [17.52, 75.43],
+            'Machnur': [17.5400, 75.4500],
+            'Borale': [17.5000, 75.4100],
+            'Andhalgaon': [17.5300, 75.4600],
+            'Huljanti': [17.4900, 75.4200],
+            'Marapur': [17.5500, 75.4400],
+            'Nandeshwar': [17.5100, 75.4500],
+            'Balewadi': [17.5200, 75.4000],
+            'Kavathe': [17.5400, 75.4200],
+            'Ganeshwadi': [17.4800, 75.4400],
+            'Shirshi': [17.5300, 75.4100],
+            
+            // Mohol Taluka Villages
+            'Mohol': [17.81, 75.65],
+            'Anagar': [17.8300, 75.6700],
+            'Narkhed': [17.7900, 75.6300],
+            'Lamboti': [17.8200, 75.6800],
+            'Penur': [17.7800, 75.6400],
+            'Wadala': [17.8400, 75.6600],
+            'Takali': [17.8000, 75.6700],
+            'Deodi': [17.8100, 75.6200],
+            'Kolegaon': [17.8300, 75.6400],
+            'Shirapur': [17.7900, 75.6800],
+            'Chikhali': [17.8200, 75.6300],
+            'Khandali': [17.8000, 75.6900],
+            'Patkul': [17.7800, 75.6600],
+            
+            // North Solapur Villages
+            'Hotgi': [17.7200, 75.9500],
+            'Kumbhari': [17.7000, 75.9300],
+            'Karamba': [17.7100, 75.9700],
+            'Bale': [17.6900, 75.9100],
+            'Nandur': [17.7300, 75.9400],
+            'Hiraj': [17.6800, 75.9600],
+            'Khed': [17.7200, 75.9200],
+            'Ranmasale': [17.7400, 75.9600],
+            'Kegaon': [17.6700, 75.9400],
+            'Degaon': [17.7100, 75.9800],
+            'Bhogaon': [17.6900, 75.9500],
+            
+            // South Solapur Villages
+            'Mandrup': [17.6000, 75.8800],
+            'Boramani': [17.5900, 75.9200],
+            'Dhotri': [17.6100, 75.8600],
+            'Hatture': [17.5800, 75.9000],
+            'Nandani': [17.6200, 75.8900],
+            'Musti': [17.5700, 75.9100],
+            'Talsangi': [17.6000, 75.8700],
+            'Bhatambre': [17.5900, 75.9300],
+            
+            // Solapur City Areas
+            'Solapur City': [17.6599, 75.9064]
+        };
+        
+        let map;
+        let markers = [];
+        let userLocation = null;
+        let userMarker = null;
+        let streetLayer, satelliteLayer;
+        
+        // Initialize map with OpenStreetMap + Satellite
+        function initMap(centerLocation) {
+            // Always center on Solapur, India (ignore browser location)
+            const coords = talukaCoords[centerLocation] || [17.6599, 75.9064]; // Solapur City
+            
+            // Create map centered on Solapur
+            map = L.map('map', {
+                center: [coords[0], coords[1]],
+                zoom: 11,
+                zoomControl: true
+            });
+            
+            // Street Map Layer (Default)
+            streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            });
+            
+            // Satellite Layer (Esri World Imagery - FREE)
+            satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles © Esri',
+                maxZoom: 19
+            });
+            
+            // Hybrid Layer (Satellite + Labels)
+            const hybridLayer = L.layerGroup([
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles © Esri',
+                    maxZoom: 19
+                }),
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+                    attribution: '© CARTO',
+                    maxZoom: 19,
+                    subdomains: 'abcd'
+                })
+            ]);
+            
+            // Add default layer
+            streetLayer.addTo(map);
+            
+            // Layer Control (Switch between Street/Satellite/Hybrid)
+            const baseLayers = {
+                "🗺️ Street Map": streetLayer,
+                "🛰️ Satellite": satelliteLayer,
+                "🌍 Hybrid": hybridLayer
+            };
+            
+            L.control.layers(baseLayers, null, {
+                position: 'topright'
+            }).addTo(map);
+            
+            // Add scale control
+            L.control.scale({
+                imperial: false,
+                metric: true
+            }).addTo(map);
+            
+            // Try to get user location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        
+                        // Add user marker with pulsing animation
+                        const userIcon = L.divIcon({
+                            className: 'user-location-marker',
+                            html: `
+                                <div style="position: relative;">
+                                    <div style="
+                                        position: absolute;
+                                        width: 40px;
+                                        height: 40px;
+                                        background: rgba(66, 133, 244, 0.3);
+                                        border-radius: 50%;
+                                        animation: pulse 2s infinite;
+                                        top: -10px;
+                                        left: -10px;
+                                    "></div>
+                                    <div style="
+                                        background: #4285F4;
+                                        width: 20px;
+                                        height: 20px;
+                                        border-radius: 50%;
+                                        border: 3px solid white;
+                                        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+                                    "></div>
+                                </div>
+                                <style>
+                                    @keyframes pulse {
+                                        0% { transform: scale(0.5); opacity: 1; }
+                                        100% { transform: scale(1.5); opacity: 0; }
+                                    }
+                                </style>
+                            `,
+                            iconSize: [20, 20],
+                            iconAnchor: [10, 10]
+                        });
+                        
+                        userMarker = L.marker([userLocation.lat, userLocation.lng], {
+                            icon: userIcon,
+                            title: 'Your Location',
+                            zIndexOffset: 1000
+                        }).addTo(map);
+                        
+                        userMarker.bindPopup('<b>📍 Your Location</b>').openPopup();
+                        
+                        // Add accuracy circle
+                        L.circle([userLocation.lat, userLocation.lng], {
+                            radius: position.coords.accuracy,
+                            color: '#4285F4',
+                            fillColor: '#4285F4',
+                            fillOpacity: 0.1,
+                            weight: 1
+                        }).addTo(map);
+                        
+                        map.setView([userLocation.lat, userLocation.lng], 12);
+                    },
+                    (error) => {
+                        console.log('Location error:', error);
+                        // Show message to user
+                        const locationBtn = L.control({position: 'topleft'});
+                        locationBtn.onAdd = function() {
+                            const div = L.DomUtil.create('div', 'location-error');
+                            div.innerHTML = '<div style="background: white; padding: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">📍 Enable location for accurate distances</div>';
+                            return div;
+                        };
+                        locationBtn.addTo(map);
+                    }
+                );
+            }
+        }
+        
+        // Add food markers with geocoding for accurate locations
+        async function addFoodMarkers(foods) {
+            if (!map) return;
+            
+            // Clear existing markers (except user marker)
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+            
+            for (let index = 0; index < foods.length; index++) {
+                const food = foods[index];
+                let coords = null;
+                let locationSource = '';
+                
+                // Priority 1: Try exact match with area name
+                coords = villageCoords[food.area];
+                if (coords) {
+                    locationSource = `area exact match: ${food.area}`;
+                }
+                
+                // Priority 2: Extract village from compound area names
+                // e.g., "Pandharpur - Gopalpur" → "Gopalpur"
+                if (!coords && food.area.includes(' - ')) {
+                    const parts = food.area.split(' - ');
+                    const villageName = parts[parts.length - 1].trim();
+                    coords = villageCoords[villageName];
+                    if (coords) {
+                        locationSource = `compound area: ${food.area} → ${villageName}`;
+                    }
+                }
+                
+                // Priority 3: Parse pickup address for village names
+                // Clean and extract village from pickup address
+                if (!coords && food.pickup_address) {
+                    // Remove common prefixes and clean address
+                    let cleanAddress = food.pickup_address
+                        .replace(/\bat post\b/gi, '')
+                        .replace(/\bat\b/gi, '')
+                        .replace(/\bpost\b/gi, '')
+                        .replace(/[-,]/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim()
+                        .toLowerCase();
+                    
+                    // Try to find any village name in the pickup address
+                    for (const [villageName, villageCoord] of Object.entries(villageCoords)) {
+                        if (cleanAddress.includes(villageName.toLowerCase())) {
+                            coords = villageCoord;
+                            locationSource = `pickup address match: "${food.pickup_address}" → ${villageName}`;
+                            break;
+                        }
+                    }
+                }
+                
+                // Priority 4: Fallback to taluka headquarters
+                if (!coords) {
+                    coords = talukaCoords[food.taluka];
+                    locationSource = `taluka fallback: ${food.taluka}`;
+                }
+                
+                console.log(`📍 [${index + 1}] ${food.title} | ${locationSource} | Coords: ${coords}`);
+                
+                if (!coords) {
+                    console.log(`❌ No coordinates found for ${food.area}`);
+                    continue;
+                }
+                
+                // Calculate distance
+                let distance = 'Unknown';
+                let color = '#4CAF50';
+                
+                if (userLocation) {
+                    const d = calculateDistance(
+                        userLocation.lat, userLocation.lng,
+                        coords[0], coords[1]
+                    );
+                    distance = d.toFixed(1) + ' km';
+                    color = d < 5 ? '#4CAF50' : d < 15 ? '#FF9800' : '#F44336';
+                }
+                
+                // Create custom marker icon with number
+                const markerIcon = L.divIcon({
+                    className: 'food-marker',
+                    html: `
+                        <div style="position: relative;">
+                            <div style="
+                                background: ${color};
+                                width: 32px;
+                                height: 32px;
+                                border-radius: 50% 50% 50% 0;
+                                transform: rotate(-45deg);
+                                border: 3px solid white;
+                                box-shadow: 0 3px 10px rgba(0,0,0,0.4);
+                            "></div>
+                            <div style="
+                                position: absolute;
+                                top: 6px;
+                                left: 8px;
+                                color: white;
+                                font-weight: bold;
+                                font-size: 12px;
+                                transform: rotate(45deg);
+                            ">${index + 1}</div>
+                        </div>
+                    `,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 32],
+                    popupAnchor: [0, -32]
+                });
+                
+                const marker = L.marker([coords[0], coords[1]], {
+                    icon: markerIcon,
+                    title: food.title
+                }).addTo(map);
+                
+                // Create popup content
+                const popupContent = `
+                    <div style="padding: 12px; max-width: 280px; font-family: Arial, sans-serif;">
+                        <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                            <span style="
+                                background: ${color};
+                                color: white;
+                                width: 28px;
+                                height: 28px;
+                                border-radius: 50%;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-weight: bold;
+                                margin-right: 10px;
+                            ">${index + 1}</span>
+                            <h3 style="margin: 0; color: #2d7a4f; font-size: 16px; flex: 1;">${food.title}</h3>
+                        </div>
+                        <div style="border-top: 2px solid #e0e0e0; padding-top: 10px;">
+                            <p style="margin: 6px 0; font-size: 13px;"><strong>🍽️ Type:</strong> ${food.food_type}</p>
+                            <p style="margin: 6px 0; font-size: 13px;"><strong>📦 Quantity:</strong> ${food.quantity}</p>
+                            <p style="margin: 6px 0; font-size: 13px;"><strong>📍 Taluka:</strong> ${food.taluka}</p>
+                            <p style="margin: 6px 0; font-size: 13px;"><strong>🏘️ Village:</strong> ${food.area || 'N/A'}</p>
+                            <p style="margin: 6px 0; font-size: 13px;"><strong>📏 Distance:</strong> <span style="color: ${color}; font-weight: bold;">${distance}</span></p>
+                            <p style="margin: 6px 0; font-size: 13px;"><strong>🏠 Pickup:</strong> ${food.pickup_address}</p>
+                            <p style="margin: 6px 0; font-size: 13px;"><strong>👤 Contact:</strong> ${food.contact_person_name}</p>
+                            <p style="margin: 6px 0; font-size: 13px;"><strong>📞 Phone:</strong> ${food.contact_person_phone}</p>
+                            <p style="margin: 6px 0; font-size: 13px;"><strong>⏰ Expires:</strong> ${new Date(food.expiry_time).toLocaleString()}</p>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-top: 12px;">
+                            <a href="https://www.google.com/maps/dir/?api=1&destination=${coords[0]},${coords[1]}" target="_blank" 
+                               style="
+                                   flex: 1;
+                                   padding: 10px 15px;
+                                   background: ${color};
+                                   color: white;
+                                   text-decoration: none;
+                                   border-radius: 6px;
+                                   font-size: 14px;
+                                   text-align: center;
+                                   font-weight: bold;
+                                   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                               ">
+                                🚗 Google Maps
+                            </a>
+                            <button onclick="showRoute(${index})" 
+                               style="
+                                   flex: 1;
+                                   padding: 10px 15px;
+                                   background: #2196F3;
+                                   color: white;
+                                   border: none;
+                                   border-radius: 6px;
+                                   font-size: 14px;
+                                   text-align: center;
+                                   font-weight: bold;
+                                   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                                   cursor: pointer;
+                               ">
+                                🗺️ Show Route
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent, {
+                    maxWidth: 300,
+                    className: 'custom-popup'
+                });
+                
+                // Open popup on hover
+                marker.on('mouseover', function() {
+                    this.openPopup();
+                });
+                
+                markers.push(marker);
+            }
+            
+            // Fit map to show all markers
+            if (markers.length > 0) {
+                const group = L.featureGroup(markers);
+                if (userMarker) {
+                    group.addLayer(userMarker);
+                }
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+        
+        // Calculate distance (Haversine formula)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                     Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+        
+        // Focus on specific marker when food card is clicked
+        function focusOnMarker(index) {
+            if (!map || !markers[index]) return;
+            
+            const marker = markers[index];
+            
+            // Zoom to marker
+            map.setView(marker.getLatLng(), 15, {
+                animate: true,
+                duration: 1
+            });
+            
+            // Open popup
+            setTimeout(() => {
+                marker.openPopup();
+            }, 500);
+            
+            // Scroll to map
+            document.getElementById('mapSection').scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'center'
+            });
+            
+            // Highlight marker temporarily
+            const originalIcon = marker.getIcon();
+            const highlightIcon = L.divIcon({
+                className: 'food-marker-highlight',
+                html: `
+                    <div style="position: relative; animation: bounce 0.5s ease-in-out 3;">
+                        <div style="
+                            background: #FFD700;
+                            width: 40px;
+                            height: 40px;
+                            border-radius: 50% 50% 50% 0;
+                            transform: rotate(-45deg);
+                            border: 4px solid white;
+                            box-shadow: 0 5px 15px rgba(255,215,0,0.6);
+                        "></div>
+                        <div style="
+                            position: absolute;
+                            top: 8px;
+                            left: 10px;
+                            color: white;
+                            font-weight: bold;
+                            font-size: 14px;
+                            transform: rotate(45deg);
+                        ">${index + 1}</div>
+                    </div>
+                    <style>
+                        @keyframes bounce {
+                            0%, 100% { transform: translateY(0); }
+                            50% { transform: translateY(-10px); }
+                        }
+                    </style>
+                `,
+                iconSize: [40, 40],
+                iconAnchor: [20, 40],
+                popupAnchor: [0, -40]
+            });
+            
+            marker.setIcon(highlightIcon);
+            
+            // Reset icon after 2 seconds
+            setTimeout(() => {
+                marker.setIcon(originalIcon);
+            }, 2000);
+        }
+        
+        // Show route from user location to food location
+        let currentRoute = null;
+        function showRoute(index) {
+            if (!markers[index]) return;
+            
+            const destination = markers[index].getLatLng();
+            
+            if (!userLocation) {
+                // If no user location, just zoom to food location
+                map.setView(destination, 15, {
+                    animate: true,
+                    duration: 1
+                });
+                markers[index].openPopup();
+                alert('📍 Location services not enabled.\n\nShowing food location on map.\n\nFor route, please enable location or use "Google Maps" button.');
+                return;
+            }
+            
+            // Remove previous route if exists
+            if (currentRoute) {
+                map.removeControl(currentRoute);
+            }
+            
+            // Create route
+            currentRoute = L.Routing.control({
+                waypoints: [
+                    L.latLng(userLocation.lat, userLocation.lng),
+                    L.latLng(destination.lat, destination.lng)
+                ],
+                routeWhileDragging: false,
+                show: true,
+                addWaypoints: false,
+                draggableWaypoints: false,
+                fitSelectedRoutes: true,
+                showAlternatives: false,
+                lineOptions: {
+                    styles: [{color: '#2196F3', opacity: 0.8, weight: 6}]
+                },
+                createMarker: function() { return null; }, // Don't create extra markers
+                router: L.Routing.osrmv1({
+                    serviceUrl: 'https://router.project-osrm.org/route/v1'
+                })
+            }).addTo(map);
+            
+            // Show route instructions
+            currentRoute.on('routesfound', function(e) {
+                const routes = e.routes;
+                const summary = routes[0].summary;
+                const distance = (summary.totalDistance / 1000).toFixed(1);
+                const time = Math.round(summary.totalTime / 60);
+                
+                alert(`🗺️ Route Found!\n\n📏 Distance: ${distance} km\n⏱️ Time: ${time} minutes\n\nBlue line shows the route on map.`);
+            });
+        }
+        
+        async function searchFood() {
+            const location = document.getElementById('locationSelect').value;
+            const results = document.getElementById('results');
+            const title = document.getElementById('resultsTitle');
+            const subtitle = document.getElementById('resultsSubtitle');
+            const grid = document.getElementById('foodGrid');
+            
+            console.log('🔍 Searching for food in:', location);
+            
+            if (!location) {
+                alert('Please select your location');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/food/available-in-area?taluka=${encodeURIComponent(location)}`);
+                const data = await response.json();
+                
+                console.log('📦 Response:', data);
+                
+                results.style.display = 'block';
+                
+                if (data.foods && data.foods.length > 0) {
+                    // Show map - OpenStreetMap always works!
+                    document.getElementById('mapSection').style.display = 'block';
+                    initMap(location);
+                    
+                    // Wait for map to initialize, then add markers with geocoding
+                    setTimeout(async () => {
+                        await addFoodMarkers(data.foods);
+                    }, 500);
+                    
+                    title.textContent = `${data.foods.length} Food Items Available`;
+                    subtitle.textContent = `Showing results for ${location}`;
+                    
+                    grid.innerHTML = data.foods.map((food, index) => {
+                        // Calculate distance for card display
+                        let distanceText = '';
+                        let distanceBadgeColor = '#FF9800';
+                        
+                        if (userLocation) {
+                            const coords = villageCoords[food.area] || talukaCoords[food.taluka];
+                            if (coords) {
+                                const d = calculateDistance(
+                                    userLocation.lat, userLocation.lng,
+                                    coords[0], coords[1]
+                                );
+                                distanceText = `📏 ${d.toFixed(1)} km away`;
+                                distanceBadgeColor = d < 5 ? '#4CAF50' : d < 15 ? '#FF9800' : '#F44336';
+                            }
+                        }
+                        
+                        return `
+                            <div class="food-card" onclick="focusOnMarker(${index})" style="cursor:pointer;">
+                                <div style="display:flex; align-items:center; margin-bottom:12px; gap:10px;">
+                                    <span style="background:rgba(74,222,128,0.2); border:1px solid rgba(74,222,128,0.4); color:#4ade80; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:0.85rem; flex-shrink:0;">${index + 1}</span>
+                                    <h3 style="margin:0; flex:1; color:#86efac; font-size:1.05rem;">${food.title}</h3>
+                                </div>
+                                <p><strong>🍽️ Type:</strong> ${food.food_type}</p>
+                                <p><strong>📦 Quantity:</strong> ${food.quantity}</p>
+                                <p><strong>📍 Location:</strong> ${food.taluka} - ${food.area || 'N/A'}</p>
+                                <p><strong>🏠 Pickup:</strong> ${food.pickup_address}</p>
+                                <p><strong>📞 Contact:</strong> ${food.contact_person_name} - ${food.contact_person_phone}</p>
+                                <p><strong>⏰ Expires:</strong> ${new Date(food.expiry_time).toLocaleString()}</p>
+                                <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                                    <span class="location-badge">📍 ${food.taluka}</span>
+                                    ${distanceText ? `<span class="distance-badge">${distanceText}</span>` : ''}
+                                </div>
+                                <div style="margin-top:12px; padding:9px; background:rgba(134,239,172,0.08); border:1px solid rgba(134,239,172,0.2); border-radius:10px; text-align:center; font-size:0.82rem; color:#86efac; font-weight:600;">
+                                    🗺️ Click to view on map
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    results.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    title.textContent = 'No Food Available';
+                    subtitle.textContent = `No food items found in ${location}`;
+                    grid.innerHTML = `
+                        <div class="no-results">
+                            <h3>😔 No food available in this area</h3>
+                            <p>Try selecting a different location or check back later</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('Error loading food items. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>

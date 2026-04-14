@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food in District - FoodShare</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Segoe UI',sans-serif; min-height:100vh; background:#0a0a0a; position:relative; }
+
+        .page-bg-container { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; overflow:hidden; }
+        .page-bg { position:absolute; top:0; left:0; width:100%; height:100%; background-size:cover; background-position:center; opacity:0; transition:opacity 2s ease-in-out; filter:blur(3px) brightness(0.55); }
+        .page-bg.active { opacity:1; }
+        .page-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
+
+        nav {
+            background: rgba(0,0,0,0.3); backdrop-filter:blur(16px);
+            border-bottom:1px solid rgba(255,255,255,0.08);
+            padding:14px 32px; display:flex; align-items:center; justify-content:space-between;
+            position:sticky; top:0; z-index:100;
+        }
+        .nav-logo { color:white; font-size:1.2rem; font-weight:800; text-decoration:none; letter-spacing:1px; }
+        .nav-back { color:#d8b4fe; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); padding:7px 18px; border-radius:20px; text-decoration:none; font-size:0.85rem; font-weight:600; transition:all 0.2s; }
+        .nav-back:hover { background:rgba(255,255,255,0.18); }
+
+        .hero {
+            background: rgba(255,255,255,0.07); backdrop-filter:blur(16px);
+            border-bottom:1px solid rgba(255,255,255,0.08);
+            color:white; padding:28px 24px; text-align:center;
+        }
+        .hero h1 { font-size:2rem; font-weight:900; margin-bottom:6px; background:linear-gradient(135deg,#fff,#d8b4fe); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .hero p { font-size:0.95rem; color:rgba(255,255,255,0.6); }
+
+        .toolbar {
+            background:rgba(255,255,255,0.06); backdrop-filter:blur(12px);
+            border-bottom:1px solid rgba(255,255,255,0.08);
+            padding:12px 24px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+        }
+        .stat-pill { background:rgba(216,180,254,0.15); color:#d8b4fe; border:1px solid rgba(216,180,254,0.3); padding:5px 14px; border-radius:20px; font-size:0.82rem; font-weight:700; }
+        .stat-pill.total { background:rgba(74,222,128,0.15); color:#4ade80; border-color:rgba(74,222,128,0.3); font-size:0.9rem; }
+        .refresh-btn {
+            margin-left:auto; background:rgba(216,180,254,0.15); border:1px solid rgba(216,180,254,0.3);
+            color:#d8b4fe; padding:8px 20px; border-radius:20px;
+            cursor:pointer; font-size:0.85rem; font-weight:600; display:flex; align-items:center; gap:6px; transition:all 0.2s;
+        }
+        .refresh-btn:hover { background:rgba(216,180,254,0.28); }
+
+        .content { max-width:1200px; margin:0 auto; padding:24px; }
+
+        .loading { text-align:center; padding:60px 20px; color:rgba(255,255,255,0.5); }
+        .spinner { width:44px; height:44px; border:4px solid rgba(255,255,255,0.1); border-top-color:#d8b4fe; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 14px; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        .taluka-header {
+            background:rgba(216,180,254,0.1); backdrop-filter:blur(10px);
+            border:1px solid rgba(216,180,254,0.25);
+            color:white; padding:12px 18px; border-radius:12px;
+            display:flex; justify-content:space-between; align-items:center;
+            margin:28px 0 14px; font-weight:700;
+        }
+        .taluka-badge { background:rgba(255,255,255,0.12); padding:3px 14px; border-radius:12px; font-size:0.8rem; color:rgba(255,255,255,0.8); }
+
+        .cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; }
+
+        .food-card {
+            background:rgba(255,255,255,0.08); backdrop-filter:blur(14px);
+            border:1px solid rgba(255,255,255,0.12);
+            border-radius:16px; padding:18px;
+            box-shadow:0 8px 30px rgba(0,0,0,0.3);
+            border-top:3px solid rgba(216,180,254,0.5);
+            transition:all 0.2s; color:#f0f0f0;
+        }
+        .food-card:hover { transform:translateY(-4px); background:rgba(255,255,255,0.13); border-top-color:#d8b4fe; box-shadow:0 14px 40px rgba(0,0,0,0.4); }
+        .food-card h4 { font-size:1rem; color:#d8b4fe; margin-bottom:10px; font-weight:700; }
+        .food-card p { font-size:0.82rem; color:rgba(255,255,255,0.7); margin:5px 0; line-height:1.5; }
+        .food-card strong { color:#fff; }
+        .badge-row { display:flex; justify-content:space-between; margin-bottom:10px; gap:6px; }
+        .badge { padding:3px 12px; border-radius:12px; font-size:0.75rem; font-weight:700; }
+        .timer { font-weight:700; font-size:0.88rem; margin:8px 0 4px; }
+        .divider { border:none; border-top:1px solid rgba(255,255,255,0.08); margin:10px 0; }
+        .route-btn {
+            display:block; text-align:center;
+            background:rgba(216,180,254,0.15); border:1px solid rgba(216,180,254,0.3);
+            color:#d8b4fe; padding:9px; border-radius:10px;
+            text-decoration:none; font-weight:600; font-size:0.85rem;
+            margin-top:10px; transition:all 0.2s;
+        }
+        .route-btn:hover { background:rgba(216,180,254,0.28); }
+
+        .empty { text-align:center; padding:60px 20px; color:rgba(255,255,255,0.4); }
+        .empty i { font-size:3rem; margin-bottom:14px; opacity:0.3; display:block; }
+
+        @media(max-width:600px) { .hero h1 { font-size:1.4rem; } .content { padding:16px; } }
+    </style>
+</head>
+<body>
+
+<div class="page-bg-container">
+    <div class="page-bg active" style="background-image:url('https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1920&q=90');"></div>
+    <div class="page-bg" style="background-image:url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920&q=90');"></div>
+    <div class="page-bg" style="background-image:url('https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=1920&q=90');"></div>
+    <div class="page-overlay"></div>
+</div>
+
+<nav>
+    <a href="/" class="nav-logo">🍽️ FoodShare</a>
+    <a href="/" class="nav-back">🏠 Home</a>
+</nav>
+
+<div class="hero">
+    <h1>🌍 Food in District</h1>
+    <p>Live food donations across all talukas of Solapur District</p>
+</div>
+
+<div class="toolbar" id="toolbar">
+    <div class="loading" style="padding:4px 0;">
+        <div class="spinner" style="width:22px;height:22px;border-width:3px;display:inline-block;vertical-align:middle;margin:0 8px 0 0;"></div>
+        Loading...
+    </div>
+</div>
+
+<div class="content" id="content">
+    <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading food across Solapur District...</p>
+    </div>
+</div>
+
+<script>
+    // Background rotation
+    let bgIdx = 0;
+    const bgImgs = document.querySelectorAll('.page-bg');
+    setInterval(() => { bgImgs[bgIdx].classList.remove('active'); bgIdx=(bgIdx+1)%bgImgs.length; bgImgs[bgIdx].classList.add('active'); }, 5000);
+
+async function loadFood() {
+    document.getElementById('content').innerHTML =
+        '<div class="loading"><div class="spinner"></div><p>Loading...</p></div>';
+    document.getElementById('toolbar').innerHTML =
+        '<div style="color:#888;font-size:0.9rem;">⏳ Fetching data...</div>';
+
+    try {
+        const res   = await fetch('/api/food/all-available');
+        const data  = await res.json();
+        const foods = data.foods || [];
+
+        // Group by taluka
+        const byTaluka = {};
+        foods.forEach(f => {
+            const k = f.taluka || f.area || 'Unknown';
+            if (!byTaluka[k]) byTaluka[k] = [];
+            byTaluka[k].push(f);
+        });
+
+        // Toolbar stats
+        document.getElementById('toolbar').innerHTML =
+            `<div class="stat-pill total">🍽️ ${foods.length} Total Items</div>` +
+            `<div class="stat-pill">📍 ${Object.keys(byTaluka).length} Talukas</div>` +
+            Object.entries(byTaluka).map(([t,arr]) =>
+                `<div class="stat-pill">${t}: ${arr.length}</div>`
+            ).join('') +
+            `<button class="refresh-btn" onclick="loadFood()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>`;
+
+        if (foods.length === 0) {
+            document.getElementById('content').innerHTML = `
+                <div class="empty">
+                    <i class="fas fa-utensils"></i>
+                    <p style="font-size:1.1rem;font-weight:600;">No food available right now</p>
+                    <p style="margin-top:6px;font-size:0.85rem;">Check back later!</p>
+                </div>`;
+            return;
+        }
+
+        let html = '';
+        Object.entries(byTaluka).sort().forEach(([taluka, items]) => {
+            html += `
+                <div class="taluka-header">
+                    <span>� ${taluka} Taluka</span>
+                    <span class="taluka-badge">${items.length} item${items.length > 1 ? 's' : ''}</span>
+                </div>
+                <div class="cards-grid">`;
+
+            items.forEach(food => {
+                const h  = (new Date(food.expiry_time) - new Date()) / 3600000;
+                const sc = h > 6 ? '#155724' : h > 2 ? '#856404' : '#721c24';
+                const sb = h > 6 ? '#d4edda' : h > 2 ? '#fff3cd' : '#f8d7da';
+                const sl = h > 6 ? '🟢 Fresh'  : h > 2 ? '🟠 Moderate' : '🔴 Urgent';
+                const ht = h > 0
+                    ? `${Math.floor(h)}h ${Math.floor((h % 1) * 60)}m remaining`
+                    : 'Expiring soon';
+
+                html += `
+                    <div class="food-card">
+                        <h4>🍽️ ${food.title}</h4>
+                        <div class="badge-row">
+                            <span class="badge" style="background:#e8f5e9;color:#1b5e20;">✅ AVAILABLE</span>
+                            <span class="badge" style="background:${sb};color:${sc};">${sl}</span>
+                        </div>
+                        <p><i class="fas fa-box" style="width:16px;color:#6a1b9a;"></i> <strong>Quantity:</strong> ${food.quantity}</p>
+                        <p><i class="fas fa-map-marker-alt" style="width:16px;color:#6a1b9a;"></i> <strong>Area:</strong> ${food.area}${food.taluka ? ' · ' + food.taluka : ''}</p>
+                        <p><i class="fas fa-home" style="width:16px;color:#6a1b9a;"></i> <strong>Pickup:</strong> ${food.pickup_address || 'N/A'}</p>
+                        <p><i class="fas fa-phone" style="width:16px;color:#6a1b9a;"></i> <strong>Contact:</strong> ${food.contact_person_name || ''} ${food.contact_person_phone || 'N/A'}</p>
+                        <p><i class="fas fa-utensils" style="width:16px;color:#6a1b9a;"></i> <strong>Type:</strong> ${food.food_type || 'N/A'}</p>
+                        <hr class="divider">
+                        <p><i class="fas fa-clock" style="width:16px;color:#6a1b9a;"></i> <strong>Expires:</strong> ${new Date(food.expiry_time).toLocaleString()}</p>
+                        <div class="timer" style="color:${sc};">⏱️ ${ht}</div>
+                    </div>`;
+            });
+            html += '</div>';
+        });
+
+        document.getElementById('content').innerHTML = html;
+
+    } catch(e) {
+        document.getElementById('content').innerHTML = `
+            <div class="empty">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>Error loading food data.</p>
+                <button onclick="loadFood()"
+                    style="margin-top:16px;padding:10px 24px;background:#6a1b9a;color:white;
+                    border:none;border-radius:20px;cursor:pointer;font-size:0.9rem;">
+                    Retry
+                </button>
+            </div>`;
+        document.getElementById('toolbar').innerHTML =
+            '<span style="color:#c62828;">❌ Failed to load</span>';
+    }
+}
+
+window.addEventListener('DOMContentLoaded', loadFood);
+</script>
+
+    <!-- Language Switcher -->
+    </body>
+</html>

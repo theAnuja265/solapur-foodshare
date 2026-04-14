@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Solapur Food Share Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f5f5f5; }
+        
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 250px;
+            height: 100vh;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+        }
+        .sidebar h2 {
+            color: #4CAF50;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #34495e;
+        }
+        .sidebar a {
+            display: block;
+            color: white;
+            text-decoration: none;
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        .sidebar a:hover { background: #34495e; padding-left: 20px; }
+        
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 { color: #2c3e50; }
+        
+        .report-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .report-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4CAF50;
+        }
+        
+        .download-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .download-btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .download-btn.green { background: #4CAF50; }
+        .download-btn.blue { background: #2196F3; }
+        .download-btn.orange { background: #FF9800; }
+        .download-btn.purple { background: #9C27B0; }
+        
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-box h3 { font-size: 36px; margin-bottom: 5px; }
+        .stat-box p { font-size: 14px; opacity: 0.9; }
+        
+        .filter-section {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .filter-section label {
+            display: inline-block;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .filter-section input, .filter-section select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-right: 15px;
+        }
+        .filter-btn {
+            padding: 8px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>🍽️ Admin Panel</h2>
+        <a href="/admin/dashboard">📊 Dashboard</a>
+        <a href="/admin/ngos">🏢 Manage NGOs</a>
+        <a href="/admin/donors">👥 Manage Donors</a>
+        <a href="/admin/food">🍲 All Food Items</a>
+        <a href="/admin/bulk-upload">📤 Bulk Upload</a>
+        <a href="/admin/reports" style="background: #34495e;">📈 Reports</a>
+        <a href="/admin/settings">⚙️ Settings</a>
+        <a href="/">🏠 Back to Website</a>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <h1>📊 Reports & Analytics</h1>
+        </div>
+
+        <!-- Statistics Summary -->
+        <div class="report-section">
+            <h2>📈 Platform Statistics</h2>
+            <div class="stats-summary">
+                <div class="stat-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h3 id="totalUsers">0</h3>
+                    <p>Total Users</p>
+                </div>
+                <div class="stat-box" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <h3 id="totalFood">0</h3>
+                    <p>Food Items Shared</p>
+                </div>
+                <div class="stat-box" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <h3 id="totalClaimed">0</h3>
+                    <p>Food Claimed</p>
+                </div>
+                <div class="stat-box" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                    <h3 id="totalPickedUp">0</h3>
+                    <p>Successfully Delivered</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Date Filter -->
+        <div class="report-section">
+            <h2>🔍 Filter Reports</h2>
+            <div class="filter-section">
+                <label>From:</label>
+                <input type="date" id="fromDate">
+                
+                <label>To:</label>
+                <input type="date" id="toDate">
+                
+                <label>Taluka:</label>
+                <select id="talukaFilter">
+                    <option value="">All Talukas</option>
+                    <option value="Solapur City">Solapur City</option>
+                    <option value="Pandharpur">Pandharpur</option>
+                    <option value="Barshi">Barshi</option>
+                    <option value="Akkalkot">Akkalkot</option>
+                    <option value="Mohol">Mohol</option>
+                    <option value="Malshiras">Malshiras</option>
+                    <option value="Karmala">Karmala</option>
+                    <option value="Madha">Madha</option>
+                    <option value="Sangole">Sangole</option>
+                    <option value="Mangalvedhe">Mangalvedhe</option>
+                    <option value="South Solapur">South Solapur</option>
+                </select>
+                
+                <button class="filter-btn" onclick="applyFilters()">Apply Filters</button>
+            </div>
+        </div>
+
+        <!-- Download Reports -->
+        <div class="report-section">
+            <h2>📥 Download Reports</h2>
+            <div class="download-buttons">
+                <a href="/api/admin/reports/users-csv" class="download-btn green">
+                    📄 Download All Users (CSV)
+                </a>
+                <a href="/api/admin/reports/ngos-csv" class="download-btn blue">
+                    🏢 Download NGOs List (CSV)
+                </a>
+                <a href="/api/admin/reports/donors-csv" class="download-btn orange">
+                    👥 Download Donors List (CSV)
+                </a>
+                <a href="/api/admin/reports/food-csv" class="download-btn purple">
+                    🍲 Download Food Items (CSV)
+                </a>
+            </div>
+        </div>
+
+        <!-- Taluka-wise Report -->
+        <div class="report-section">
+            <h2>📍 Taluka-wise Statistics</h2>
+            <div id="talukaStats">
+                <p>Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load statistics
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/admin/reports/stats');
+                const data = await response.json();
+                
+                document.getElementById('totalUsers').textContent = data.total_users || 0;
+                document.getElementById('totalFood').textContent = data.total_food || 0;
+                document.getElementById('totalClaimed').textContent = data.total_claimed || 0;
+                document.getElementById('totalPickedUp').textContent = data.total_picked_up || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Load taluka-wise stats
+        async function loadTalukaStats() {
+            try {
+                const response = await fetch('/api/admin/reports/taluka-stats');
+                const data = await response.json();
+                
+                let html = '<table style="width: 100%; border-collapse: collapse;">';
+                html += '<tr style="background: #f5f5f5; font-weight: bold;">';
+                html += '<th style="padding: 12px; border: 1px solid #ddd;">Taluka</th>';
+                html += '<th style="padding: 12px; border: 1px solid #ddd;">NGOs</th>';
+                html += '<th style="padding: 12px; border: 1px solid #ddd;">Donors</th>';
+                html += '<th style="padding: 12px; border: 1px solid #ddd;">Food Items</th>';
+                html += '</tr>';
+                
+                for (const [taluka, stats] of Object.entries(data)) {
+                    html += '<tr>';
+                    html += `<td style="padding: 12px; border: 1px solid #ddd;">${taluka}</td>`;
+                    html += `<td style="padding: 12px; border: 1px solid #ddd; text-align: center;">${stats.ngos}</td>`;
+                    html += `<td style="padding: 12px; border: 1px solid #ddd; text-align: center;">${stats.donors}</td>`;
+                    html += `<td style="padding: 12px; border: 1px solid #ddd; text-align: center;">${stats.food}</td>`;
+                    html += '</tr>';
+                }
+                
+                html += '</table>';
+                document.getElementById('talukaStats').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading taluka stats:', error);
+                document.getElementById('talukaStats').innerHTML = '<p>Error loading data</p>';
+            }
+        }
+
+        function applyFilters() {
+            const fromDate = document.getElementById('fromDate').value;
+            const toDate = document.getElementById('toDate').value;
+            const taluka = document.getElementById('talukaFilter').value;
+            
+            alert(`Filters applied:\nFrom: ${fromDate}\nTo: ${toDate}\nTaluka: ${taluka || 'All'}`);
+            // Add filter logic here
+        }
+
+        // Load on page load
+        loadStats();
+        loadTalukaStats();
+        
+        // Auto-refresh every 30 seconds
+        setInterval(loadStats, 30000);
+    </script>
+</body>
+</html>

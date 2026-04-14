@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Donations - FoodShare</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; min-height: 100vh; position: relative; }
+
+        .page-bg-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; }
+        .page-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0; transition: opacity 2s ease-in-out; filter: blur(3px) brightness(0.6); }
+        .page-bg.active { opacity: 1; }
+        .page-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); }
+
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 20px 40px; position: relative; z-index: 1; }
+
+        /* Header */
+        .page-header {
+            background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            padding: 28px 32px;
+            margin-bottom: 24px;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+        }
+        .page-header h1 { color: #fff; font-size: 1.8rem; font-weight: 800; }
+        .page-header p { color: rgba(255,255,255,0.6); font-size: 0.95rem; margin-top: 4px; }
+        .home-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+            color: #d8b4fe; padding: 10px 22px; border-radius: 10px; text-decoration: none;
+            font-weight: 600; font-size: 0.9rem; transition: all 0.2s;
+        }
+        .home-btn:hover { background: rgba(255,255,255,0.2); }
+
+        /* Email box */
+        .email-box {
+            background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px; padding: 22px 28px; margin-bottom: 24px;
+            display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+        }
+        .email-box input {
+            flex: 1; min-width: 220px; padding: 11px 16px;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px; color: #fff; font-size: 0.95rem;
+        }
+        .email-box input::placeholder { color: rgba(255,255,255,0.4); }
+        .email-box button {
+            padding: 11px 28px; background: linear-gradient(135deg,#4ade80,#16a34a);
+            color: white; border: none; border-radius: 10px; font-size: 0.95rem;
+            font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .email-box button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(74,222,128,0.4); }
+
+        /* Alert */
+        .alert { padding: 13px 18px; border-radius: 10px; margin-bottom: 20px; font-weight: 500; }
+        .alert-success { background: rgba(76,175,80,0.15); color: #a5d6a7; border: 1px solid rgba(76,175,80,0.3); }
+        .alert-error   { background: rgba(244,67,54,0.15);  color: #ef9a9a;  border: 1px solid rgba(244,67,54,0.3); }
+
+        /* Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 16px; margin-bottom: 28px; }
+        .stat-card {
+            background: rgba(255,255,255,0.07); backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.12); border-radius: 16px;
+            padding: 22px; text-align: center; transition: all 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-4px); background: rgba(255,255,255,0.12); }
+        .stat-num { font-size: 2.4rem; font-weight: 900; color: #4ade80; line-height: 1; }
+        .stat-lbl { font-size: 0.78rem; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 1px; margin-top: 6px; }
+
+        /* Donation Cards */
+        .donations-grid { display: grid; gap: 20px; }
+        .donation-card {
+            background: rgba(255,255,255,0.07); backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.12); border-radius: 20px;
+            padding: 26px; transition: all 0.3s; position: relative; overflow: hidden;
+        }
+        .donation-card:hover { transform: translateY(-4px); background: rgba(255,255,255,0.11); border-color: rgba(134,239,172,0.3); box-shadow: 0 16px 40px rgba(0,0,0,0.3); }
+        .card-title { font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 14px; }
+
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 5px 16px; border-radius: 20px; font-size: 0.78rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;
+        }
+        .status-available { background: rgba(74,222,128,0.2); color: #4ade80; border: 1px solid rgba(74,222,128,0.4); }
+        .status-claimed   { background: rgba(255,193,7,0.2);  color: #ffd54f; border: 1px solid rgba(255,193,7,0.4); }
+        .status-picked_up { background: rgba(33,150,243,0.2); color: #90caf9; border: 1px solid rgba(33,150,243,0.4); }
+        .status-expired   { background: rgba(244,67,54,0.2);  color: #ef9a9a; border: 1px solid rgba(244,67,54,0.4); }
+
+        /* Info grid */
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 12px; margin-bottom: 16px; }
+        .info-item {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px; padding: 13px 16px;
+        }
+        .info-lbl { font-size: 0.72rem; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 5px; }
+        .info-val { font-size: 0.92rem; color: #f0f0f0; font-weight: 600; }
+
+        /* Pickup code */
+        .pickup-code-box {
+            background: rgba(144,202,249,0.1); border: 1px solid rgba(144,202,249,0.3);
+            border-radius: 12px; padding: 14px 18px; margin-bottom: 14px; text-align: center;
+        }
+        .pickup-code-lbl { font-size: 0.72rem; color: #90caf9; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .pickup-code-val { font-size: 1.8rem; font-weight: 900; color: #90caf9; letter-spacing: 5px; }
+
+        /* Claimed by box */
+        .claimed-box {
+            background: rgba(255,193,7,0.08); border: 1px solid rgba(255,193,7,0.25);
+            border-radius: 12px; padding: 14px 18px; margin-bottom: 14px;
+        }
+        .claimed-box-title { font-size: 0.72rem; color: #ffd54f; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700; }
+        .claimed-box p { font-size: 0.88rem; color: rgba(255,255,255,0.75); margin: 3px 0; }
+
+        /* Expiry timer */
+        .expiry-timer {
+            border-radius: 12px; padding: 12px 18px; margin-bottom: 14px; text-align: center;
+            font-weight: 700; font-size: 1rem;
+        }
+        .timer-fresh   { background: rgba(74,222,128,0.15); border: 1px solid rgba(74,222,128,0.3); color: #4ade80; }
+        .timer-warning { background: rgba(255,193,7,0.15);  border: 1px solid rgba(255,193,7,0.3);  color: #ffd54f; }
+        .timer-urgent  { background: rgba(244,67,54,0.15);  border: 1px solid rgba(244,67,54,0.3);  color: #ef9a9a; }
+        .timer-expired { background: rgba(150,150,150,0.15);border: 1px solid rgba(150,150,150,0.3);color: #aaa; }
+
+        /* Delete btn */
+        .delete-btn {
+            width: 100%; padding: 11px; background: rgba(244,67,54,0.15);
+            border: 1px solid rgba(244,67,54,0.3); color: #ef9a9a;
+            border-radius: 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+        }
+        .delete-btn:hover { background: rgba(244,67,54,0.3); }
+
+        /* Empty */
+        .empty { text-align: center; padding: 60px 20px; color: rgba(255,255,255,0.4); }
+        .empty-icon { font-size: 60px; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="page-bg-container">
+        <div class="page-bg active" style="background-image: url('https://images.unsplash.com/photo-1495195134817-aeb325a55b65?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1920&q=90');"></div>
+        <div class="page-overlay"></div>
+    </div>
+
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1>📋 My Donations</h1>
+                <p>Track all your food donations and their status</p>
+            </div>
+            <a href="/" class="home-btn">🏠 Home</a>
+        </div>
+
+        <div class="email-box">
+            <input type="tel" id="donorPhone" placeholder="Enter your mobile number (10 digits)..." style="flex:2;">
+            <input type="email" id="donorEmail" placeholder="Or enter email (optional)" style="flex:2;">
+            <button onclick="loadDonations()">📊 Load Donations</button>
+        </div>
+
+        <div id="alertBox"></div>
+        <div id="statsContainer"></div>
+        <div id="donationsContainer">
+            <div class="empty">
+                <div class="empty-icon">📧</div>
+                <p>Enter your email above to see your donations</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-load from localStorage
+        window.addEventListener('DOMContentLoaded', () => {
+            const bg = document.querySelectorAll('.page-bg');
+            let i = 0;
+            setInterval(() => { bg[i].classList.remove('active'); i = (i+1)%bg.length; bg[i].classList.add('active'); }, 5000);
+
+            const email = localStorage.getItem('userEmail');
+            if (email) {
+                document.getElementById('donorEmail').value = email;
+                loadDonations();
+            }
+        });
+
+        async function loadDonations() {
+            const phone = document.getElementById('donorPhone').value.trim();
+            const email = document.getElementById('donorEmail').value.trim();
+
+            if (!phone && !email) { alert('Please enter mobile number or email'); return; }
+
+            const alertBox = document.getElementById('alertBox');
+            const statsEl  = document.getElementById('statsContainer');
+            const container = document.getElementById('donationsContainer');
+
+            alertBox.className = 'alert alert-success';
+            alertBox.innerHTML = '⏳ Loading...';
+
+            // Build query
+            const params = new URLSearchParams();
+            if (phone) params.append('phone', phone);
+            if (email) params.append('email', email);
+
+            try {
+                const res  = await fetch('/api/donor/my-donations?' + params.toString());
+                const data = await res.json();
+
+                if (!res.ok) {
+                    alertBox.className = 'alert alert-error';
+                    alertBox.innerHTML = '❌ ' + data.message;
+                    return;
+                }
+
+                const donations = data.donations || [];
+                const total     = donations.length;
+                const available = donations.filter(d => d.status === 'available').length;
+                const claimed   = donations.filter(d => d.status === 'claimed').length;
+                const delivered = donations.filter(d => d.status === 'picked_up').length;
+
+                alertBox.className = 'alert alert-success';
+                alertBox.innerHTML = `✅ ${total} donation(s) found`;
+
+                statsEl.innerHTML = `
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-lbl">Total</div></div>
+                        <div class="stat-card"><div class="stat-num" style="color:#4ade80">${available}</div><div class="stat-lbl">🟢 Available</div></div>
+                        <div class="stat-card"><div class="stat-num" style="color:#ffd54f">${claimed}</div><div class="stat-lbl">🟡 Claimed</div></div>
+                        <div class="stat-card"><div class="stat-num" style="color:#90caf9">${delivered}</div><div class="stat-lbl">✅ Delivered</div></div>
+                    </div>`;
+
+                if (donations.length === 0) {
+                    container.innerHTML = `<div class="empty"><div class="empty-icon">😔</div><p>No donations yet. <a href="/add-food" style="color:#4ade80;">Donate Food</a></p></div>`;
+                } else {
+                    container.innerHTML = '<div class="donations-grid">' + donations.map((d,i) => buildCard(d,i)).join('') + '</div>';
+                    donations.forEach(d => { if (d.status === 'available') startTimer(d.id, d.expiry_time); });
+                }
+            } catch(e) {
+                alertBox.className = 'alert alert-error';
+                alertBox.innerHTML = '❌ ' + e.message;
+            }
+        }
+
+        function buildCard(d, idx) {
+            const created  = new Date(d.created_at).toLocaleString();
+            const expiry   = new Date(d.expiry_time).toLocaleString();
+            const claimedAt = d.claimed_at ? new Date(d.claimed_at).toLocaleString() : 'N/A';
+
+            const statusMap = {
+                available: ['status-available','🟢 Available'],
+                claimed:   ['status-claimed',  '🟡 Claimed'],
+                picked_up: ['status-picked_up','✅ Picked Up'],
+                expired:   ['status-expired',  '🔴 Expired']
+            };
+            const [cls, lbl] = statusMap[d.status] || ['status-expired', d.status];
+
+            // Claimed NGO info
+            const ngoName  = d.claimed_ngo_name || (d.claimer ? d.claimer.name : null);
+            const ngoPhone = d.claimed_ngo_phone || (d.claimer ? d.claimer.phone : null);
+
+            return `
+            <div class="donation-card" id="food-card-${d.id}">
+                <div class="card-title">🍽️ ${d.title}</div>
+                <span class="status-badge ${cls}">${lbl}</span>
+
+                ${d.status === 'available' ? `<div class="expiry-timer timer-fresh" id="timer-${d.id}">⏰ <span id="countdown-${d.id}">Calculating...</span></div>` : ''}
+
+                <div class="pickup-code-box">
+                    <div class="pickup-code-lbl">🔑 Pickup Code</div>
+                    <div class="pickup-code-val">${d.pickup_code || 'N/A'}</div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-item"><div class="info-lbl">📝 Description</div><div class="info-val">${d.description}</div></div>
+                    <div class="info-item"><div class="info-lbl">🍽️ Food Type</div><div class="info-val">${d.food_type}</div></div>
+                    <div class="info-item"><div class="info-lbl">📦 Quantity</div><div class="info-val">${d.quantity}</div></div>
+                    <div class="info-item"><div class="info-lbl">📍 Area</div><div class="info-val">${d.area || 'N/A'}</div></div>
+                    <div class="info-item"><div class="info-lbl">🏘️ Taluka</div><div class="info-val">${d.taluka || 'N/A'}</div></div>
+                    <div class="info-item"><div class="info-lbl">🏠 Pickup Address</div><div class="info-val">${d.pickup_address}</div></div>
+                    <div class="info-item"><div class="info-lbl">📞 Contact</div><div class="info-val">${d.contact_person_name} - ${d.contact_person_phone}</div></div>
+                    <div class="info-item"><div class="info-lbl">📅 Donated On</div><div class="info-val">${created}</div></div>
+                    <div class="info-item"><div class="info-lbl">⏰ Expires At</div><div class="info-val">${expiry}</div></div>
+                </div>
+
+                ${(d.status === 'claimed' || d.status === 'picked_up') && ngoName ? `
+                <div class="claimed-box">
+                    <div class="claimed-box-title">🏢 Claimed By NGO</div>
+                    <p><strong style="color:#ffd54f;">${ngoName}</strong></p>
+                    ${ngoPhone ? `<p>📞 ${ngoPhone}</p>` : ''}
+                    <p>🕐 ${claimedAt}</p>
+                    ${d.status === 'picked_up' ? '<p style="color:#4ade80;font-weight:700;margin-top:6px;">✅ Successfully Delivered!</p>' : ''}
+                </div>` : ''}
+
+                ${d.status === 'available' ? `
+                <button class="delete-btn" onclick="deleteDonation(${d.id})">🗑️ Delete Donation</button>` : ''}
+            </div>`;
+        }
+
+        function startTimer(foodId, expiryTime) {
+            function update() {
+                const el = document.getElementById('countdown-' + foodId);
+                const box = document.getElementById('timer-' + foodId);
+                if (!el || !box) return;
+                const diff = new Date(expiryTime) - new Date();
+                if (diff <= 0) {
+                    el.textContent = 'EXPIRED';
+                    box.className = 'expiry-timer timer-expired';
+                    return;
+                }
+                const h = Math.floor(diff/3600000);
+                const m = Math.floor((diff%3600000)/60000);
+                const s = Math.floor((diff%60000)/1000);
+                el.textContent = h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`;
+                box.className = 'expiry-timer ' + (h >= 6 ? 'timer-fresh' : h >= 1 ? 'timer-warning' : 'timer-urgent');
+            }
+            update();
+            setInterval(update, 1000);
+        }
+
+        async function deleteDonation(foodId) {
+            if (!confirm('Delete this donation?')) return;
+            const email = document.getElementById('donorEmail').value;
+            try {
+                const res = await fetch(`/api/food/delete/${foodId}`, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_email: email })
+                });
+                const data = await res.json();
+                if (res.ok) { alert('✅ Deleted!'); loadDonations(); }
+                else alert('❌ ' + data.message);
+            } catch(e) { alert('❌ ' + e.message); }
+        }
+    </script>
+
+    <!-- Language Switcher -->
+    </body>
+</html>

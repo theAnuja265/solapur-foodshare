@@ -1,0 +1,2314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Share Food - Solapur Food Share</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --secondary: #3b82f6;
+            --dark: #0f172a;
+            --light: #f8fafc;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Full Page Dynamic Background */
+        .page-bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        .page-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            background-color: #999;
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+        }
+        .page-bg.active {
+            opacity: 1;
+        }
+        .page-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.7);
+        }
+
+        /* Animated Background - Remove old gradient */
+        body::before {
+            display: none;
+        }
+
+        /* Container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 10px 24px;
+            border-radius: 50px;
+            margin-bottom: 20px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            color: white;
+            margin-bottom: 15px;
+            font-weight: 800;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
+        }
+
+        /* Navigation */
+        .nav-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 40px;
+            animation: fadeIn 0.8s ease 0.2s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn-primary {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--primary);
+            border: 2px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .nav-btn-primary:hover {
+            background: rgba(16, 185, 129, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        /* Form Card */
+        .form-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 50px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: fadeInUp 0.8s ease 0.4s both;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Alert */
+        .alert {
+            padding: 18px 24px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--primary);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* Form Groups */
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            color: white;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .required {
+            color: var(--danger);
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .form-group select {
+            cursor: pointer;
+        }
+
+        .form-group select option {
+            background: var(--dark);
+            color: white;
+        }
+
+        /* Icon Input */
+        .input-with-icon {
+            position: relative;
+        }
+
+        .input-with-icon i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 1.1rem;
+        }
+
+        .input-with-icon input {
+            padding-left: 50px;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            margin-top: 30px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(16, 185, 129, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .info-box h3 {
+            color: var(--secondary);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-box ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-card {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-buttons {
+                flex-direction: column;
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Image Upload Styles */
+        .image-upload-container {
+            margin-top: 10px;
+        }
+
+        .image-upload-box {
+            border: 3px dashed rgba(16, 185, 129, 0.5);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .image-upload-box:hover {
+            border-color: var(--primary);
+            background: rgba(16, 185, 129, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .image-preview {
+            margin-top: 20px;
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .image-preview img {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+            border-radius: 15px;
+        }
+
+        .remove-image-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(244, 67, 54, 0.9);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .remove-image-btn:hover {
+            background: #f44336;
+            transform: scale(1.05);
+        }
+
+        /* AI Verification Styles */
+        .ai-verification {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(33, 150, 243, 0.1);
+            border: 2px solid rgba(33, 150, 243, 0.3);
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .ai-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .ai-header i {
+            font-size: 1.5rem;
+            color: var(--secondary);
+        }
+
+        .ai-header h4 {
+            color: var(--secondary);
+            margin: 0;
+        }
+
+        .ai-loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .ai-loading .spinner {
+            margin: 0 auto 15px;
+        }
+
+        .ai-loading p {
+            color: var(--dark);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .ai-loading small {
+            color: #666;
+        }
+
+        .ai-result {
+            text-align: left;
+        }
+
+        .ai-result.success {
+            border-left: 4px solid var(--primary);
+        }
+
+        .ai-result.warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        .ai-result.danger {
+            border-left: 4px solid var(--danger);
+        }
+
+        .ai-quality {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .ai-quality i {
+            font-size: 2rem;
+        }
+
+        .ai-result.success .ai-quality i {
+            color: var(--primary);
+        }
+
+        .ai-result.warning .ai-quality i {
+            color: var(--warning);
+        }
+
+        .ai-result.danger .ai-quality i {
+            color: var(--danger);
+        }
+
+        .quality-info h5 {
+            margin: 0 0 10px 0;
+            font-size: 1.1rem;
+        }
+
+        .confidence-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .confidence-fill {
+            height: 8px;
+            background: var(--primary);
+            border-radius: 4px;
+            min-width: 20px;
+        }
+
+        .ai-result.warning .confidence-fill {
+            background: var(--warning);
+        }
+
+        .ai-result.danger .confidence-fill {
+            background: var(--danger);
+        }
+
+        .confidence-bar span {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .ai-details {
+            margin-bottom: 15px;
+        }
+
+        .ai-details p {
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .suggestions {
+            margin-top: 10px;
+        }
+
+        .suggestions strong {
+            color: var(--dark);
+        }
+
+        .suggestions ul {
+            margin: 5px 0 0 20px;
+            padding: 0;
+        }
+
+        .suggestions li {
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .ai-approval,
+        .ai-warning,
+        .ai-rejection {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        .ai-approval {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .ai-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .ai-rejection {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .ai-error {
+            text-align: center;
+            padding: 20px;
+            color: var(--danger);
+        }
+
+        .ai-error i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .retry-btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .retry-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .info-text {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: normal;
+            margin-left: 5px;
+        }
+
+        /* Safety Prediction Styles */
+        .safety-prediction {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(76, 175, 80, 0.1);
+            border: 2px solid rgba(76, 175, 80, 0.3);
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .prediction-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .prediction-header i {
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        .prediction-header h4 {
+            color: var(--primary);
+            margin: 0;
+        }
+
+        .prediction-result {
+            text-align: left;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .prediction-result.safe-humans {
+            background: rgba(76, 175, 80, 0.2);
+            border-left: 4px solid var(--primary);
+        }
+
+        .prediction-result.safe-animals {
+            background: rgba(255, 152, 0, 0.2);
+            border-left: 4px solid var(--warning);
+        }
+
+        .prediction-result.not-safe {
+            background: rgba(244, 67, 54, 0.2);
+            border-left: 4px solid var(--danger);
+        }
+
+        .safety-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .safety-status i {
+            font-size: 1.5rem;
+        }
+
+        .safety-status.safe-humans i {
+            color: var(--primary);
+        }
+
+        .safety-status.safe-animals i {
+            color: var(--warning);
+        }
+
+        .safety-status.not-safe i {
+            color: var(--danger);
+        }
+
+        .safety-time {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .safety-message {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .safety-timeline {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .timeline-bar {
+            flex: 1;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .timeline-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .timeline-fill.safe {
+            background: var(--primary);
+        }
+
+        .timeline-fill.warning {
+            background: var(--warning);
+        }
+
+        .timeline-fill.danger {
+            background: var(--danger);
+        }
+
+        .timeline-text {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .verification-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            color: #2196F3;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .verification-loading i {
+            font-size: 1.5rem;
+        }
+
+        .verification-result {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 15px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .verification-result.success {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid rgba(76, 175, 80, 0.5);
+            color: #4CAF50;
+        }
+
+        .verification-result.error {
+            background: rgba(244, 67, 54, 0.2);
+            border: 2px solid rgba(244, 67, 54, 0.5);
+            color: #f44336;
+        }
+
+        .verification-result i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Full Page Background -->
+    <div class="page-bg-container">
+        <div class="page-bg active" style="background-image: url('https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1593113646773-028c64a8f1b8?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1509099863731-ef4bff19e808?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=1920&q=90');"></div>
+        <div class="page-overlay"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-badge">
+                <i class="fas fa-leaf"></i>
+                <span>Share Food, Save Lives</span>
+            </div>
+            <h1>🍽️ Donate Food</h1>
+            <p>Help us fight hunger by sharing your surplus food with those in need</p>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-buttons">
+            <a href="/" class="nav-btn nav-btn-secondary">
+                <i class="fas fa-home"></i> Home
+            </a>
+        </div>
+
+        <!-- Form Card -->
+        <div class="form-card">
+            <!-- Alert Box -->
+            <div id="alertBox" class="alert"></div>
+
+            <!-- Info Box -->
+            <div class="info-box">
+                <h3><i class="fas fa-info-circle"></i> Food Donation Guidelines</h3>
+                <ul>
+                    <li>Ensure food is fresh and safe for consumption</li>
+                    <li>Provide accurate expiry time for perishable items</li>
+                    <li>Pack food properly to maintain hygiene</li>
+                    <li>Be available at the specified pickup time</li>
+                </ul>
+            </div>
+
+            <!-- Form -->
+            <form id="foodForm">
+                <!-- Donor Name -->
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-user"></i>
+                        Your Name <span class="required">*</span>
+                    </label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="donorName" required placeholder="e.g., Ramesh Patil">
+                    </div>
+                </div>
+
+                <!-- Donor Phone -->
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-phone"></i>
+                        Mobile Number <span class="required">*</span>
+                    </label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-phone"></i>
+                        <input type="tel" id="donorPhone" required placeholder="e.g., 9876543210" pattern="[0-9]{10}">
+                    </div>
+                </div>
+
+                <!-- Email (Optional) -->
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-envelope"></i>
+                        Email <span style="color:#888;font-size:0.8rem;">(Optional)</span>
+                    </label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-at"></i>
+                        <input type="email" id="userEmail" placeholder="your@email.com (optional)">
+                    </div>
+                </div>
+
+                <script>
+                (function() {
+                    const e = localStorage.getItem('userEmail');
+                    if (e) document.getElementById('userEmail').value = e;
+                })();
+                </script>
+
+                <!-- Food Title -->
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-utensils"></i>
+                        Food Title <span class="required">*</span>
+                    </label>
+                    <input type="text" id="title" required placeholder="e.g., Cooked Rice & Dal">
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-align-left"></i>
+                        Description <span class="required">*</span>
+                    </label>
+                    <textarea id="description" rows="4" required placeholder="Describe the food items, preparation method, ingredients..."></textarea>
+                </div>
+
+                <!-- Food Image Upload -->
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-camera"></i>
+                        Food Photo (Optional)
+                    </label>
+
+                    <!-- Single image for form submission -->
+                    <div class="image-upload-box" id="imageUploadBox" onclick="document.getElementById('foodImage').click()">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <div class="upload-text">
+                            <h4>Click to Upload Food Photo</h4>
+                            <p>1 photo for donation listing</p>
+                            <small>Supported: JPG, PNG, WebP (Max 5MB)</small>
+                        </div>
+                    </div>
+                    <input type="file" id="foodImage" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
+
+                    <!-- Single image preview -->
+                    <div id="imagePreview" class="image-preview" style="display:none;">
+                        <img id="previewImg" src="" alt="Food preview">
+                        <button type="button" class="remove-image-btn" onclick="removeImage()">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </div>
+                    <div id="aiAnalysis" style="display:none;"><div id="aiResult"></div></div>
+
+                    <!-- Multiple images for safety prediction -->
+                    <div style="margin-top:16px; padding:14px; background:#f0f8ff; border-radius:10px; border:2px dashed #4CAF50;">
+                        <div style="font-size:0.85rem; font-weight:700; color:#1b5e20; margin-bottom:8px;">
+                            🔬 Upload Multiple Photos for Safety Prediction (Optional)
+                        </div>
+                        <div style="font-size:0.78rem; color:#666; margin-bottom:10px;">
+                            Upload 2-4 photos from different angles — AI will analyze all for better accuracy
+                        </div>
+                        <div id="multiImgPreviews" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px;"></div>
+                        <button type="button" onclick="document.getElementById('safetyImages').click()"
+                            style="padding:8px 16px; background:#4CAF50; color:white; border:none; border-radius:8px; font-size:0.82rem; font-weight:600; cursor:pointer;">
+                            <i class="fas fa-plus"></i> Add Photos
+                        </button>
+                        <input type="file" id="safetyImages" accept="image/*" multiple style="display:none;" onchange="handleMultiImageUpload(event)">
+                        <div id="multiImgCount" style="font-size:0.78rem; color:#888; margin-top:6px;"></div>
+                    </div>
+                </div>
+
+                <!-- ── SAFETY PREDICTION PANEL (hidden - removed) ── -->
+                <div id="safetyPredictionPanel" style="display:none !important; visibility:hidden; height:0; overflow:hidden; margin:0; padding:0; border:none;">
+
+                    <!-- Panel header -->
+                    <div style="background:linear-gradient(135deg,#1b5e20,#4CAF50); color:white; padding:14px 20px; display:flex; align-items:center; gap:10px;">
+                        <i class="fas fa-shield-alt" style="font-size:1.3rem;"></i>
+                        <div>
+                            <div style="font-weight:800; font-size:1rem;">🔬 Food Safety Prediction</div>
+                            <div style="font-size:0.78rem; opacity:0.85;">Fill all details → Click Predict to see result</div>
+                        </div>
+                    </div>
+
+                    <!-- AI image result - hidden, used internally for scoring -->
+                    <div id="aiAnalysis" style="display:none;">
+                        <div id="aiResult"></div>
+                    </div>
+
+                    <!-- Safety inputs -->
+                    <div style="padding:16px 20px; background:white; border-bottom:1px solid #eee;">
+                        <div style="font-size:0.82rem; font-weight:700; color:#555; margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px;">
+                            📋 Fill All Details → Then Click Predict
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                            <div>
+                                <label style="font-size:0.8rem; font-weight:600; color:#444; display:block; margin-bottom:4px;">🍽️ Food Type *</label>
+                            <select id="safetyFoodType" style="width:100%; padding:8px 10px; border:2px solid #e0e0e0; border-radius:8px; font-size:0.85rem;" onchange="document.getElementById('foodType').value=this.value; updateExpiryPrediction();">
+                                    <option value="">Select type</option>
+                                    <option value="cooked">🍛 Cooked Food</option>
+                                    <option value="dairy">🥛 Dairy</option>
+                                    <option value="fruits">🍎 Fruits</option>
+                                    <option value="vegetables">🥬 Vegetables</option>
+                                    <option value="raw">🥕 Raw</option>
+                                    <option value="packaged">📦 Packaged</option>
+                                    <option value="bakery">🍞 Bakery</option>
+                                    <option value="other">🍴 Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.8rem; font-weight:600; color:#444; display:block; margin-bottom:4px;">🌡️ Storage *</label>
+                                <select id="safetyStorage" style="width:100%; padding:8px 10px; border:2px solid #e0e0e0; border-radius:8px; font-size:0.85rem;" onchange="document.getElementById('storageCondition').value=this.value; updateExpiryPrediction();">
+                                    <option value="">Select storage</option>
+                                    <option value="room_temperature">🌡️ Room Temperature</option>
+                                    <option value="refrigerated">❄️ Refrigerated</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.8rem; font-weight:600; color:#444; display:block; margin-bottom:4px;">⏰ Prepared At *</label>
+                                <input type="datetime-local" id="safetyPrepTime" style="width:100%; padding:8px 10px; border:2px solid #e0e0e0; border-radius:8px; font-size:0.85rem;" onchange="document.getElementById('preparationTime').value=this.value; updateExpiryPrediction();">
+                            </div>
+                            <div>
+                                <label style="font-size:0.8rem; font-weight:600; color:#444; display:block; margin-bottom:4px;">👃 Smell Status *</label>
+                                <select id="safetySmell" style="width:100%; padding:8px 10px; border:2px solid #e0e0e0; border-radius:8px; font-size:0.85rem;">
+                                    <option value="">Select smell</option>
+                                    <option value="good">😊 Good / Normal</option>
+                                    <option value="neutral">😐 Neutral / Mild</option>
+                                    <option value="bad">🤢 Bad / Sour / Rotten</option>
+                                </select>
+                            </div>
+                            <div style="grid-column:1/-1;">
+                                <label style="font-size:0.8rem; font-weight:600; color:#444; display:block; margin-bottom:4px;">✅ Confirmation *</label>
+                                <select id="safetyConfirm" style="width:100%; padding:8px 10px; border:2px solid #e0e0e0; border-radius:8px; font-size:0.85rem;">
+                                    <option value="">Select</option>
+                                    <option value="yes">✅ Yes, I confirm the food is fresh and safe</option>
+                                    <option value="not_sure">❓ Not Sure</option>
+                                </select>
+                            </div>
+                        </div>
+                        <!-- Warning -->
+                        <div style="margin-top:10px; padding:8px 12px; background:#fff3e0; border-radius:8px; font-size:0.75rem; color:#e65100; border-left:3px solid #ff9800;">
+                            ⚠️ <strong>Warning:</strong> Providing false information may lead to account blocking.
+                        </div>
+                        <!-- Predict Button -->
+                        <button type="button" onclick="_predictAllowed=true; runHybridSafety();" id="predictBtn"
+                            style="margin-top:14px; width:100%; padding:12px; background:linear-gradient(135deg,#1b5e20,#4CAF50); color:white; border:none; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:opacity 0.2s;">
+                            🔬 Predict Food Safety
+                        </button>
+                    </div>
+
+                    <!-- Score bar -->
+                    <div id="safetyResultSection" style="display:none;">
+                    <div style="padding:14px 20px; background:#f8f9fa; border-bottom:1px solid #eee;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-size:0.82rem; font-weight:700; color:#555;">Food Safety Score</span>
+                            <span id="safetyScoreText" style="font-size:1.5rem; font-weight:900; color:#9e9e9e;">--</span>
+                        </div>
+                        <div style="background:#e0e0e0; border-radius:20px; height:14px; overflow:hidden;">
+                            <div id="safetyScoreBar" style="height:100%; width:0%; border-radius:20px; transition:width 0.7s ease, background 0.4s;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Result badge + message -->
+                    <div style="padding:14px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; background:white;">
+                        <div id="safetyBadge" style="padding:10px 28px; border-radius:25px; font-size:1.1rem; font-weight:900; letter-spacing:0.5px; background:#f5f5f5; color:#999;">Waiting...</div>
+                        <div id="safetyMessage" style="font-size:0.88rem; color:#555; flex:1; line-height:1.5;"></div>
+                    </div>
+
+                    <!-- Factor breakdown -->
+                    <div id="safetyFactors" style="padding:0 20px 16px; display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px; background:white;"></div>
+                    </div>
+                </div>
+                
+                <!-- Food Type, Quantity & Container -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-tag"></i>
+                            Food Type <span class="required">*</span>
+                        </label>
+                        <select id="foodType" required onchange="updateExpiryPrediction();">
+                            <option value="">Select Type</option>
+                            <option value="cooked">🍛 Cooked Food</option>
+                            <option value="raw">🥕 Raw Ingredients</option>
+                            <option value="packaged">📦 Packaged Food</option>
+                            <option value="fruits">🍎 Fruits</option>
+                            <option value="vegetables">🥬 Vegetables</option>
+                            <option value="dairy">🥛 Dairy Products</option>
+                            <option value="bakery">🍞 Bakery Items</option>
+                            <option value="other">🍴 Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-weight"></i>
+                            Quantity <span class="required">*</span>
+                        </label>
+                        <input type="text" id="quantity" required placeholder="e.g., 10 plates / 5 kg">
+                    </div>
+                </div>
+
+                <!-- Hidden fields for form submission - synced from safety panel -->
+                <input type="hidden" id="containerType" value="other">
+                <input type="hidden" id="storageCondition" value="">
+                <input type="hidden" id="preparationTime" value="">
+                <input type="hidden" id="currentTemperature" value="">
+
+                <!-- ── HYBRID FOOD SAFETY PREDICTION PANEL ── -->
+                <div id="hybridSafetyPanel" style="display:none; margin-bottom:25px; border-radius:15px; overflow:hidden; border:2px solid #e0e0e0;">
+                    <div style="background:linear-gradient(135deg,#1b5e20,#4CAF50); color:white; padding:14px 20px; display:flex; align-items:center; gap:10px;">
+                        <i class="fas fa-shield-alt" style="font-size:1.3rem;"></i>
+                        <h4 style="margin:0; font-size:1rem;">🔬 Hybrid Food Safety Prediction</h4>
+                        <span style="margin-left:auto; font-size:0.8rem; opacity:0.85;">AI + Rules + Image</span>
+                    </div>
+
+                    <!-- Score bar -->
+                    <div style="padding:16px 20px; background:#f8f9fa; border-bottom:1px solid #eee;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span style="font-size:0.85rem; font-weight:600; color:#555;">Food Safety Score</span>
+                            <span id="safetyScoreText" style="font-size:1.4rem; font-weight:900; color:#4CAF50;">--</span>
+                        </div>
+                        <div style="background:#e0e0e0; border-radius:20px; height:12px; overflow:hidden;">
+                            <div id="safetyScoreBar" style="height:100%; width:0%; border-radius:20px; transition:width 0.6s ease, background 0.4s;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Result badge -->
+                    <div style="padding:16px 20px; display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                        <div id="safetyBadge" style="padding:10px 24px; border-radius:25px; font-size:1.1rem; font-weight:800; letter-spacing:0.5px;">--</div>
+                        <div id="safetyMessage" style="font-size:0.88rem; color:#555; flex:1;"></div>
+                    </div>
+
+                    <!-- Factor breakdown -->
+                    <div id="safetyFactors" style="padding:0 20px 16px; display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px;"></div>
+                </div>
+
+                <!-- AI Expiry Prediction Result -->
+                <div id="expiryPredictionBox" style="display:none; margin-bottom: 25px; padding: 20px; border-radius: 15px; background: rgba(16,185,129,0.1); border: 2px solid rgba(16,185,129,0.3);">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
+                        <i class="fas fa-brain" style="font-size:1.5rem; color:#10b981;"></i>
+                        <h4 style="color:#10b981; margin:0;">🔮 AI Expiry Prediction</h4>
+                    </div>
+                    <div id="predictionDetails"></div>
+                </div>
+
+                <!-- Expiry Time (auto-filled by prediction, can be overridden) -->
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-clock"></i>
+                        Best Before (Expiry Date & Time) <span class="required">*</span>
+                        <span class="info-text">Auto-filled by AI prediction</span>
+                    </label>
+                    <input type="datetime-local" id="expiryTime" required>
+                </div>
+
+                <!-- Taluka & Area -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-map-marked-alt"></i>
+                            Taluka <span class="required">*</span>
+                        </label>
+                        <select id="taluka" required onchange="updateAreas()">
+                            <option value="">Select Taluka</option>
+                            <option value="Solapur City">Solapur City</option>
+                            <option value="North Solapur">North Solapur</option>
+                            <option value="South Solapur">South Solapur</option>
+                            <option value="Akkalkot">Akkalkot</option>
+                            <option value="Barshi">Barshi</option>
+                            <option value="Karmala">Karmala</option>
+                            <option value="Madha">Madha</option>
+                            <option value="Malshiras">Malshiras</option>
+                            <option value="Mangalvedhe">Mangalvedhe</option>
+                            <option value="Mohol">Mohol</option>
+                            <option value="Pandharpur">Pandharpur</option>
+                            <option value="Sangola">Sangola</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <i class="fas fa-map-marker-alt"></i>
+                            Area/Village <span class="required">*</span>
+                        </label>
+                        <select id="area" required>
+                            <option value="">Select Taluka First</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Pickup Address -->
+                <div class="form-group">
+                    <label>
+                        <i class="fas fa-map-marker-alt"></i>
+                        Pickup Address <span class="required">*</span>
+                    </label>
+                    <textarea id="pickupAddress" rows="3" required placeholder="Full address with landmark for easy pickup..."></textarea>
+                    <small id="gpsStatus" style="color:rgba(255,255,255,0.5); margin-top:6px; display:block;">
+                        <i class="fas fa-spinner fa-spin"></i> Getting your location...
+                    </small>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <i class="fas fa-heart"></i>
+                    <span>Share Food Now</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // NETWORK ENCRYPTION FUNCTIONS
+        function encryptData(data) {
+            // Simple encryption for demonstration (in production, use proper encryption libraries)
+            const encrypted = btoa(JSON.stringify(data));
+            return encrypted;
+        }
+        
+        function decryptData(encryptedData) {
+            // Simple decryption for demonstration (in production, use proper decryption libraries)
+            try {
+                const decrypted = atob(encryptedData);
+                return JSON.parse(decrypted);
+            } catch (error) {
+                console.error('Decryption error:', error);
+                return null;
+            }
+        }
+        
+        function generateEncryptionKey() {
+            // Generate a simple encryption key (in production, use proper key generation)
+            const key = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            localStorage.setItem('encryptionKey', key);
+            return key;
+        }
+        
+        function getEncryptionKey() {
+            let key = localStorage.getItem('encryptionKey');
+            if (!key) {
+                key = generateEncryptionKey();
+            }
+            return key;
+        }
+        
+        function secureEncrypt(data) {
+            const key = getEncryptionKey();
+            const dataWithKey = {
+                data: data,
+                key: key,
+                timestamp: Date.now()
+            };
+            return encryptData(dataWithKey);
+        }
+
+        // ENCRYPTION STATUS CHECK
+        function checkConnectionSecurity() {
+            const isSecure = window.location.protocol === 'https:';
+            console.log('🔒 Add Food Page Security:', {
+                protocol: window.location.protocol,
+                isSecure: isSecure,
+                encryption: 'Client-Side Data Encryption Active'
+            });
+        }
+
+        // Initialize encryption
+        checkConnectionSecurity();
+        console.log('🔐 Network Encryption Initialized for Add Food Page');
+
+        // Taluka-wise major villages - Top 20-30 villages per taluka (Solapur District)
+        const talukaAreas = {
+            'Akkalkot': [
+                'Akkalkot', 'Akkalkot (Rural)', 'Akatnala', 'Alage', 
+                'Andewadi', 'Andewadi Bk', 'Andewadi Kh', 'Ankalage', 
+                'Arali', 'Badole Bk', 'Badole Kh', 'Bagehalli', 
+                'Banjgol', 'Barhanpur', 'Basalegaon', 'Bavkarwadi',
+                'Bhosgi', 'Bhurikavathe', 'Binjger', 'Boregaon', 
+                'Borgaon', 'Boroti Bk', 'Boroti Kh', 'Chapalgaon', 
+                'Chikkhahalli', 'Chungi', 'Dahitane', 'Devikavathe', 
+                'Dodyal', 'Dudhani', 'Gogaon', 'Halchincholi', 'Kudal'
+            ],
+            'Pandharpur': [
+                'Adhiv', 'Ajoti', 'Ambe', 'Anavali', 'Aradi',
+                'Ashti', 'Babhulgaon', 'Badalkot', 'Bagalwadi', 'Bakalwadi',
+                'Bandarwadi', 'Bhandi Shegaon', 'Bhatumbare', 'Bhalawani', 'Bhose',
+                'Bondlewadi', 'Borgaon', 'Bramhapuri', 'Chale', 'Chincholi Bhose',
+                'Chincholi (K)', 'Devde', 'Dhakulewadi', 'Dhammapalwadi', 'Dharampuri',
+                'Dhawalas', 'Diganchi', 'Gadegaon', 'Gardi', 'Ghadgewadi',
+                'Gherdi', 'Ghonashi', 'Gopalpur', 'Gursale', 'Hole',
+                'Isak-Bavi', 'Ishwar-Watpure', 'Jakhale', 'Jaloli', 'Juna Karadwadi',
+                'Karkamb', 'Karole', 'Kasarkhede', 'Kauthali', 'Kavathe',
+                'Khardi', 'Kiwat', 'Kondharki', 'Koralwadi', 'Korti',
+                'Kuroli', 'Laxmanwadi', 'Lendhave Chincholi', 'Loharwadi', 'Magarwadi',
+                'Malwadi', 'Mandave', 'Mangalvedhe', 'Maravade', 'Medsingi',
+                'Mundhewadi', 'Nagthane', 'Nandani', 'Nandore', 'Nanaj',
+                'Nawalkhed', 'Nimgaon', 'Ozhewadi', 'Padasali', 'Pandharpur (Rural)',
+                'Pangari', 'Paratewadi', 'Patkul', 'Pehe', 'Phulchincholi',
+                'Pimpalgaon', 'Pohargaon', 'Pokhapur', 'Puluj', 'Punadi',
+                'Rankumbhe', 'Ranzani', 'Ropale', 'Sangvi', 'Sargerwadi',
+                'Sarnowadi', 'Satoli', 'Sawalapuri', 'Sawarkhed', 'Shatewadi',
+                'Shedshing', 'Shelgaon', 'Shetephal', 'Shinde', 'Shiradhon',
+                'Shirlochi', 'Siddhewadi', 'Sonke', 'Suste', 'Takali',
+                'Tandulwadi', 'Tarapur', 'Tawashi', 'Tungat', 'Ubharandi',
+                'Umbare', 'Upari', 'Upawate', 'Venunagar', 'Vakhari',
+                'Wadachiwadi', 'Wadwal', 'Wagholi'
+            ],
+            'Sangola': [
+                'Achakadani', 'Ajanale', 'Akola', 'Alegaon', 'Ankadhal',
+                'Balvadi', 'Bamani', 'Chikmahud', 'Chinake', 'Chincholi',
+                'Chopadi', 'Devale', 'Dhalewadi', 'Diksal', 'Dongargaon',
+                'Ekhatapur', 'Gheradi', 'Hanmantgaon', 'Hatid', 'Itaki',
+                'Javala', 'Junoni', 'Kadlas', 'Kamalapur', 'Katfal',
+                'Khavaspur', 'Kola', 'Mahim', 'Mahud Bk.', 'Manegaon',
+                'Manjari', 'Medashingi', 'Methvade', 'Nazare', 'Nijampur',
+                'Pachegaon', 'Pare', 'Rajapur', 'Rajuri', 'Save',
+                'Shirbavi', 'Shivane', 'Sonand', 'Vasud', 'Vazare',
+                'Wadegaon', 'Watambare'
+            ],
+            'Barshi': [
+                'Agalgaon', 'Alipur', 'Aljapur', 'Ambabaiwadi', 'Ambegaon',
+                'Arangaon', 'Babhulgaon', 'Balewadi', 'Bavi', 'Belgaon',
+                'Bhalgaon', 'Bhandegaon', 'Bhansale', 'Bhatambare', 'Bhoinje',
+                'Bhoyare', 'Borgaon (Zadi)', 'Borgaon Kh.', 'Chare', 'Chikharde',
+                'Chinchkhopan', 'Chincholi', 'Chumb', 'Dadshinge', 'Dahitane',
+                'Devgaon', 'Dhamangaon (A)', 'Dhamgaon (Dumala)', 'Dhanore', 'Dhebarewadi',
+                'Dhorale', 'Dhotre', 'Gadegaon', 'Gatachiwadi', 'Gaudgaon',
+                'Ghanegaon', 'Ghari', 'Gholvewadi', 'Godasewadi', 'Gormale',
+                'Gulpoli', 'Halduge', 'Hattij', 'Hingani (Pangaon)', 'Hingani (Ratanjan)',
+                'Indapur', 'Irle', 'Irlewadi', 'Jahanpur', 'Jamgaon (Agalgaon)',
+                'Jamgaon (P)', 'Jawalgaon', 'Jotibachiwadi', 'Kalambawadi (A)', 'Kalambwadi (P)',
+                'Kalegaon', 'Kandalgaon', 'Kapasi', 'Kari', 'Kasari',
+                'Kasarwadi', 'Kategaon', 'Kavhe', 'Khadkalgaon', 'Khadkoni',
+                'Khamgaon', 'Khandavi', 'Koregaon', 'Korfale', 'Kuslamb',
+                'Ladole', 'Lakshyachiwadi', 'Mahagaon', 'Malegaon (East)', 'Malegaon (West)',
+                'Malwandi', 'Mamdapur', 'Mandegaon', 'Manegaon', 'Mirzanpur',
+                'Mouje Tadwale', 'Mungashi (R)', 'Mungashi (Va)', 'Nagobachiwadi', 'Nandani',
+                'Nari (Bhandewadi)', 'Nariwadi', 'Nimbalak', 'Pandhari', 'Pangaon',
+                'Pangri', 'Pathari', 'Phaphalwadi', 'Pimpalgaon (Dhas)', 'Pimpalgaon (Pangaon)',
+                'Pimpalgaon (Pangri)', 'Pimpalwadi', 'Pimpari (Pangaon)', 'Pimpri (Ratanjan)', 'Puri',
+                'Raleras', 'Rastapur', 'Ratanjan', 'Raulgaon', 'Rui',
+                'Sakat', 'Sangamner', 'Sarjapur', 'Sarole', 'Sasure',
+                'Saundare', 'Sawargaon', 'Shelgaon (Markad)', 'Shelgaon (R)', 'Shelgaon (Vhale)',
+                'Shendri', 'Shirale', 'Shripat Pimpri', 'Surdi', 'Tadsoudne',
+                'Tambewadi', 'Tandulwadi', 'Tawadi', 'Turk-Pimpri', 'Ukadgaon',
+                'Umbarge', 'Undegaon', 'Upalai (Thonge)', 'Upale (Dumala)', 'Vairag',
+                'Wagachiwadi', 'Walwad', 'Wanewadi', 'Wangarwadi', 'Yawali',
+                'Yelamb', 'Zadi'
+            ],
+            'Karmala': [
+                'Aljapur', 'Alsunde', 'Anjandoh', 'Arjunnagar', 'Awati',
+                'Balewadi', 'Bhagatwadi', 'Bhalavni', 'Bhalewadi', 'Bhilarwadi',
+                'Bhivarwadi (N.V.)', 'Bhose', 'Bitargaon (Shrigonde)', 'Bitargaon (Wangi)', 'Borgaon',
+                'Chikhalthan', 'Dahigaon', 'Delwadi', 'Deolali', 'Devichamal',
+                'Dhaykhindi', 'Dhokari', 'Dilmeshwar', 'Divegavan', 'Gaundare',
+                'Gharatwadi', 'Ghargaon', 'Ghoti', 'Gorewadi', 'Goyegaon',
+                'Gulmarwadi', 'Gulsadi', 'Hingani', 'Hisare', 'Hivare',
+                'Hiwarwadi', 'Hulgewadi', 'Jategaon', 'Jehurwadi', 'Jeur',
+                'Jinnti', 'Kamone', 'Kandar', 'Karanje', 'Karmala (Rural)',
+                'Katraj', 'Kavitgaon', 'Kawalwadi', 'Kedgaon', 'Kem',
+                'Ketur', 'Khadakewadi', 'Khadaki', 'Khambewadi', 'Khatgaon',
+                'Kolgaon', 'Kondhar Chincholi', 'Kondhej', 'Korti', 'Kugaon',
+                'Kumbhargaon', 'Kumbhej', 'Kuskarwadi', 'Lavhe', 'Limbewadi',
+                'Malwadi', 'Mangi', 'Manjargaon', 'Mirghavan', 'Morwad',
+                'Nerle', 'Nilaj', 'Nimbhore', 'Nimgaon (H)', 'Padali',
+                'Pande', 'Pangare', 'Parewadi', 'Pathurdi', 'Phisare',
+                'Pimpalwadi', 'Pomalwadi', 'Pondhvadi', 'Pophalaj', 'Potegaon',
+                'Pothare', 'Punwar', 'Rajuri', 'Ramwadi', 'Ravgaon',
+                'Ritewadi', 'Roshewadi', 'Sade', 'Salse', 'Sangvi',
+                'Sarapdoh', 'Satoli', 'Savadi', 'Shelgaon (K)', 'Shelgaon (Wangi)',
+                'Shetphal', 'Sogaon', 'Sounde', 'Takali (Rashin)', 'Taratgaon',
+                'Umrad', 'Undargaon', 'Vadshivane', 'Vanjarwadi', 'Veet',
+                'Vihal', 'Wadachiwadi', 'Wadgaon (N)', 'Wadgaon Kh.', 'Wangi',
+                'Warkatne', 'Warkute', 'Washibe', 'Zare'
+            ],
+            'Madha': [
+                'Adhegaon', 'Ahergaon', 'Akole Bk.', 'Akole Kh.', 'Akulgaon',
+                'Akumbhe', 'Alegaon Bk.', 'Alegaon Kh.', 'Ambad', 'Anjangaon Kh.',
+                'Anjangaon Umate', 'Aran', 'Badalewadi', 'Bairagwadi', 'Barloni',
+                'Bavi', 'Bembale', 'Bhend', 'Bhogewadi', 'Bhosare',
+                'Bhuinje', 'Bhutashte', 'Bitergaon', 'Budrukwadi', 'Chandaj',
+                'Chavhanwadi', 'Chinchgaon', 'Chincholi', 'Chobhepimpari', 'Dahiwali',
+                'Darfal', 'Dhanore', 'Dhawalas', 'Footjawalgaon', 'Gar Akole',
+                'Gavalewadi', 'Ghatane', 'Ghoti', 'Hatkarwadi', 'Hole Kh.',
+                'Jadhavwadi', 'Jakhale', 'Jamgaon', 'Kanhergaon', 'Kapsewadi',
+                'Kavhe', 'Kewad', 'Khairao', 'Khairewadi', 'Kumbhej',
+                'Kurdu', 'Lahu', 'Laul', 'Londhewadi', 'Loni',
+                'Madha (Rural)', 'Mahadeowadi', 'Mahatpur', 'Malegaon', 'Manegaon',
+                'Mhaisgaon', 'Mitkalwadi', 'Modnimb', 'Mungashi', 'Nadi',
+                'Nagorli', 'Nimgaon (Madha)', 'Nimgaon (Tembhurni)', 'Padasali', 'Palwan',
+                'Panch Phulwadi', 'Papnas', 'Parite', 'Paritewadi', 'Pimpalkhute',
+                'Pimpalner', 'Randivewadi', 'Ranzani', 'Ridhore', 'Ropale Kavhe',
+                'Ropale Kh.', 'Rui', 'Sapatne (Bhose)', 'Sapatne Tembhurni', 'Shedshing',
+                'Shevare', 'Shindewadi', 'Shingewadi', 'Shiral Madha', 'Shiral Tembhurni',
+                'Solankarwadi', 'Sultanpur', 'Surli', 'Tadavale', 'Takali Tembhurni',
+                'Tambave', 'Tandulwadi', 'Tembhurni', 'Tulshi', 'Ujani Madha',
+                'Ujani Tembhurni', 'Undargaon', 'Upalai Bk.', 'Upalai Kh.', 'Upalawate',
+                'Venegaon', 'Vithalwadi', 'Wadachiwadi', 'Wadoli', 'Wadshinge',
+                'Wakav', 'Warawade', 'Wetalwadi'
+            ],
+            'Malshiras': [
+                'Akluj', 'Anandnagar', 'Babhulgaon', 'Bacheri', 'Bagewadi',
+                'Bangarde', 'Bhamb', 'Bhamburd', 'Bijvadi', 'Bondale',
+                'Borgaon', 'Chakore', 'Chandapuri', 'Chaundeshwarwadi', 'Dahigaon',
+                'Dasur', 'Dattanagar', 'Deshmukwadi', 'Dhanore', 'Dharmpuri',
+                'Dhulenagar', 'Dombalwadi', 'Ekshiv', 'Fadtari', 'Falwani',
+                'Fondshiras', 'Ganeshgaon', 'Garwad', 'Giravi', 'Girzani',
+                'Goradwadi', 'Gursale', 'Hanumanwadi', 'Islampur', 'Jadhavwadi',
+                'Jalbhavi', 'Jambud', 'Kacharewadi', 'Kadamwadi', 'Kalamboli',
+                'Kalamwadi', 'Kanher', 'Karunde', 'Khalawe', 'Khandali',
+                'Khudus', 'Kolegaon', 'Kondabavi', 'Kondarpatta', 'Kothale',
+                'Kurbavi', 'Kusmod', 'Lawang', 'Lonand', 'Londhe Mohitewadi',
+                'Magarwadi', 'Mahalung', 'Malewadi', 'Malinagar', 'Malkhambi',
+                'Maloli', 'Malshiras', 'Mandaki', 'Mandave', 'Markadwadi',
+                'Medad', 'Mire', 'Morochi', 'Motewadi', 'Natepute',
+                'Neware', 'Nimgaon', 'Nitavewadi', 'Palasmandal', 'Paniv',
+                'Pathanwasti', 'Piliv', 'Pimpari', 'Pirale', 'Pisewadi',
+                'Pratapnagar', 'Purandawade', 'Rede', 'Sadashivnagar', 'Salmukhwadi',
+                'Sangam', 'Sangramnagar', 'Savatgavhan', 'Shendechinch', 'Shindewadi',
+                'Shingorni', 'Shiwarwasti', 'Sulewadi', 'Tambave', 'Tambewadi',
+                'Tamsidwadi', 'Tandulwadi', 'Tarangfal', 'Tirwandi', 'Tondale',
+                'Ughadewadi', 'Umbare (Velapur)', 'Umbare Dahigaon', 'Vatpali', 'Velapur',
+                'Vijaywadi', 'Vithalwadi', 'Vizori', 'Wafegaon', 'Wagholi',
+                'Yashawantnagar', 'Yeliv', 'Zanje', 'Zunjevadi'
+            ],
+            'Mangalvedhe': [
+                'Akola', 'Alapur', 'Andhalgaon', 'Arali', 'Asabe-Wadi',
+                'Ashti', 'Bachoti', 'Balagi', 'Bavachi', 'Beblehal',
+                'Begampur', 'Bhose', 'Boblad', 'Borale', 'Bramhapuri',
+                'Chadi-Patti', 'Chikhalaagi', 'Choragi', 'Dahigaon', 'Diggewadi',
+                'Donaj', 'Dongargaon', 'Ganeshwadi', 'Gheradi', 'Gonewadi',
+                'Gudapur', 'Hadalgi', 'Hole', 'Huljanti', 'Hummanwadi',
+                'Ichgaon', 'Jalki', 'Junoni', 'Kacharewadi', 'Kalhalli',
+                'Karaleti', 'Karajagi', 'Kavathe', 'Khadi-Patti', 'Khomnal',
+                'Khupashangi', 'Kole', 'Kondharki', 'Laxman-Wadi', 'Lendhave-Chincholi',
+                'Lohara', 'Lonar', 'Machnur', 'Malewadi', 'Mamdapur',
+                'Mangalvedha (Rural)', 'Maravade', 'Marni', 'Metakalli', 'Modagi',
+                'Mudhavi', 'Nandeshwar', 'Nandur', 'Nimboni', 'Padalkarwadi',
+                'Patkhal', 'Phatarwadi', 'Rahatewadi', 'Ratanj', 'Revnal',
+                'Salgar (Bk)', 'Salgar (Kh)', 'Sangewadi', 'Shendgewadi', 'Shirnandagi',
+                'Shivanagi', 'Siddhapur', 'Soddi', 'Tamdaddi', 'Tanki',
+                'Tarapur', 'Tavsi', 'Tikondi', 'Ujani', 'Umre-Paga',
+                'Utale', 'Wadegaon', 'Yalmar-Manganur', 'Yeoti'
+            ],
+            'Mohol': [
+                'Adhegaon', 'Ajansond', 'Angar', 'Anjangaon', 'Arbali',
+                'Ardhanari', 'Ashti', 'Auchadwadi', 'Bagi', 'Bahekarwadi',
+                'Bamni', 'Belati', 'Bhandarkate', 'Bhika-Pimpri', 'Bhoyare',
+                'Birajdarwadi', 'Bitle', 'Bople', 'Boramani', 'Chikhali',
+                'Chordevadi', 'Dahigaon', 'Dadpur', 'Darfal', 'Deshmukwadi',
+                'Devdi', 'Dhakne', 'Dhayati', 'Diksal', 'Dongaon',
+                'Ekurke', 'Gadhadevadi', 'Galandewadi', 'Gaudgaon', 'Ghatane',
+                'Ghodeshwar', 'Ghorpadi', 'Gotewadi', 'Gujarwadi', 'Haralwadi',
+                'Hingani', 'Ichgaon', 'Itkur', 'Jamgaon (Bk)', 'Jamgaon (Kh)',
+                'Jawali', 'Jinti', 'Kamti (Bk)', 'Kamti (Kh)', 'Katewadi',
+                'Khandali', 'Khasgaon', 'Khirvadi', 'Kolegaon', 'Kondi',
+                'Konti', 'Korwali', 'Kothale', 'Kulasekaranallur', 'Kurul',
+                'Kuslamb', 'Lamboti', 'Laxmanpur', 'Malikpeth', 'Masle Chaudhary',
+                'Mirajgaon', 'Mohol (Rural)', 'Morvanchi', 'Mundhewadi', 'Najikpimpri',
+                'Nandgaon', 'Narjanwadi', 'Nimbarga', 'Papari', 'Pasale',
+                'Patkul', 'Pawarwadi', 'Penur', 'Pimpalkhunti', 'Pokharapur',
+                'Popahlaj', 'Ramhingani', 'Sarole', 'Satoli', 'Savaleshwar',
+                'Sayali', 'Shejbabhulgaon', 'Shelgaon', 'Shetphal', 'Shirapur',
+                'Shreepur', 'Shingoli', 'Siddhewadi', 'Takali', 'Tambole',
+                'Tarapur', 'Telangwadi', 'Unchagaon', 'Upale', 'Vafale',
+                'Wagholi', 'Waluj', 'Wadwal', 'Yellamvadi'
+            ],
+            'North Solapur': [
+                'Akolekati', 'Banegaon', 'Belati', 'Bhagaiwadi', 'Bhatewadi',
+                'Bhogaon', 'Darfal (Bibi)', 'Darphal (Gawadi)', 'Dongaon',
+                'Ekrukh', 'Gulwanchi', 'Haglur', 'Hipparge', 'Hiraj',
+                'Honsal', 'Inchgaon', 'Kalman', 'Karamba', 'Kawathe',
+                'Khed', 'Kondi', 'Kouthali', 'Mardi', 'Mohitewadi',
+                'Nandur', 'Nannaj', 'Narotewadi', 'Padsali', 'Pakani',
+                'Pathari', 'Raleras', 'Ranmasle', 'Samshapur', 'Sevalalnagar',
+                'Shivani', 'Taratgaon', 'Telgaon', 'Tirhe', 'Wadala', 'Wangi'
+            ],
+            'South Solapur': [
+                'Achegaon', 'Aherwadi', 'Akole Mandrup', 'Alegaon', 'Antroli',
+                'Auj Aherwadi', 'Auj Mandrup', 'Aurad', 'Balgi', 'Bandalgi',
+                'Bankalgi', 'Barur', 'Basav Nagar', 'Baxi Hipparge', 'Bhandar Kavade',
+                'Birnal', 'Bolkavathe', 'Boramani', 'Borul', 'Chandrahal',
+                'Chinchpur', 'Chincholi', 'Darganhalli', 'Dhotri', 'Dindur',
+                'Doddi', 'Gangewadi', 'Gavadewadi', 'Ghodatanda', 'Gunjegaon',
+                'Gurdehalli', 'Hanamgaon', 'Hattarsang', 'Hatur', 'Hipale',
+                'Honmurgi', 'Hotgi', 'Hotgi Station', 'Indiranagar', 'Ingalgi',
+                'Kanbas', 'Kandalgaon', 'Kandehalli', 'Karkal', 'Kasegaon',
+                'Khanapur', 'Kudal', 'Kumbhari', 'Kurghot', 'Kusur',
+                'Lavangi', 'Madre', 'Malkavathe', 'Mandrup', 'Mangoli',
+                'Mulegaon', 'Mulegaon Tanda', 'Musti', 'Nandani', 'Nimbargi',
+                'Phatatewadi', 'Pinjarwadi', 'Rajur', 'Rampur', 'Sadepur',
+                'Sangdari', 'Sanjwad', 'Savatkhed', 'Shankar Nagar', 'Shingadgaon',
+                'Shirpanhalli', 'Shirval', 'Sindkhed', 'Takali', 'Tandulwadi',
+                'Telgaon Mandrup', 'Tillehal', 'Tirth', 'Togarali', 'Ule',
+                'Ulewadi', 'Vadakbal', 'Vadapur', 'Valsang', 'Vinchur',
+                'Wadgaon', 'Wadji', 'Wangi', 'Waralegaon', 'Yelegaon'
+            ],
+            'Solapur City': [
+                'Solapur', 'Aadilpur', 'Ahmedpur', 'Chapaldev',
+                'Fatehpur', 'Jamdarwadi', 'Kalajapur', 'Khadarpur',
+                'Khandervkiwadi', 'Muhammadpur', 'Ranapur', 'Sandalpur',
+                'Shaikpur', 'Sonalagi', 'Sonapur', 'Vaidakwadi',
+                'Hotgi', 'Kumbhari', 'Karamba', 'Bale',
+                'Nandur', 'Hiraj', 'Khed', 'Ranmasale', 'Wadala',
+                'Kegaon', 'Degaon', 'Bhogaon'
+            ]
+        };
+
+        // Update areas dropdown based on selected taluka
+        function updateAreas() {
+            const talukaSelect = document.getElementById('taluka');
+            const areaSelect = document.getElementById('area');
+            const selectedTaluka = talukaSelect.value;
+
+            // Clear existing options
+            areaSelect.innerHTML = '<option value="">Select Area/Village</option>';
+
+            if (selectedTaluka && talukaAreas[selectedTaluka]) {
+                talukaAreas[selectedTaluka].forEach(area => {
+                    const option = document.createElement('option');
+                    option.value = area;
+                    option.textContent = area;
+                    areaSelect.appendChild(option);
+                });
+            }
+        }
+
+        // Set minimum datetime to current time
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('expiryTime').min = now.toISOString().slice(0, 16);
+
+        // GPS coordinates storage
+        let capturedLat = null;
+        let capturedLng = null;
+        let gpsAttempted = false;
+
+        function captureGPS() {
+            const gpsStatus = document.getElementById('gpsStatus');
+            if (!navigator.geolocation) {
+                if (gpsStatus) { gpsStatus.innerHTML = '⚠️ GPS not supported'; gpsStatus.style.color = '#f59e0b'; }
+                gpsAttempted = true;
+                return;
+            }
+            if (gpsStatus) { gpsStatus.innerHTML = '⏳ Getting location...'; gpsStatus.style.color = '#aaa'; }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    capturedLat = pos.coords.latitude;
+                    capturedLng = pos.coords.longitude;
+                    gpsAttempted = true;
+                    if (gpsStatus) {
+                        gpsStatus.innerHTML = `<i class="fas fa-map-marker-alt" style="color:#10b981"></i> Location captured (${capturedLat.toFixed(4)}, ${capturedLng.toFixed(4)})`;
+                        gpsStatus.style.color = '#10b981';
+                    }
+                },
+                (err) => {
+                    gpsAttempted = true;
+                    if (gpsStatus) {
+                        gpsStatus.innerHTML = `<i class="fas fa-exclamation-triangle" style="color:#f59e0b"></i> Location unavailable — <a href="#" onclick="captureGPS();return false;" style="color:#3b82f6;">Retry</a>`;
+                        gpsStatus.style.color = '#f59e0b';
+                    }
+                },
+                { timeout: 10000, enableHighAccuracy: true }
+            );
+        }
+
+        // Auto-capture GPS on page load
+        captureGPS();
+
+        // Form submission
+        document.getElementById('foodForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const alertBox = document.getElementById('alertBox');
+
+            // ── HARD BLOCK: unsafe food ──
+            const _ai = window.aiAnalysisResult || null;
+            const _badge = document.getElementById('safetyBadge');
+            const _badgeText = _badge ? _badge.textContent : '';
+
+            if (_ai && (_ai.quality === 'unclear' || _ai.quality === 'poor' || _ai.quality === 'bad')) {
+                alertBox.className = 'alert alert-error';
+                alertBox.style.display = 'flex';
+                alertBox.innerHTML = `<i class="fas fa-ban" style="font-size:1.5rem;color:#ef4444;margin-right:10px;"></i>
+                    <div><strong>🚫 Cannot Donate — Unsafe for Humans/People</strong><br><small>${_ai.message || 'Food is not safe for donation.'}</small></div>`;
+                alertBox.scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+
+            if (_badgeText.includes('UNSAFE')) {
+                alertBox.className = 'alert alert-error';
+                alertBox.style.display = 'flex';
+                alertBox.innerHTML = `<i class="fas fa-ban" style="font-size:1.5rem;color:#ef4444;margin-right:10px;"></i>
+                    <div><strong>🚫 Cannot Donate — Unsafe for Humans/People</strong><br><small>Safety prediction shows this food is not safe for donation.</small></div>`;
+                alertBox.scrollIntoView({ behavior: 'smooth' });
+                return;
+            }
+            
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<div class="spinner"></div><span>Sharing Food...</span>';
+            
+            // Get form data
+            const donorName  = document.getElementById('donorName').value.trim();
+            const donorPhone = document.getElementById('donorPhone').value.trim();
+            const userEmail  = document.getElementById('userEmail').value.trim();
+
+            // Generate email from phone if not provided
+            const emailToUse = userEmail || (donorPhone + '@donor.local');
+
+            const formData = {
+                user_email: emailToUse,
+                contact_person_name: donorName,
+                contact_person_phone: donorPhone,
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                food_type: document.getElementById('foodType').value,
+                quantity: document.getElementById('quantity').value,
+                container_type: document.getElementById('containerType').value,
+                expiry_time: document.getElementById('expiryTime').value,
+                taluka: document.getElementById('taluka').value,
+                area: document.getElementById('area').value,
+                pickup_address: document.getElementById('pickupAddress').value
+            };
+
+            // Add GPS if available
+            if (capturedLat && capturedLng) {
+                formData.gps_latitude = capturedLat;
+                formData.gps_longitude = capturedLng;
+            }
+            
+            try {
+                const response = await fetch('/api/food/add-test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Success
+                    alertBox.className = 'alert alert-success';
+                    alertBox.style.display = 'flex';
+                    alertBox.innerHTML = `
+                        <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
+                        <div>
+                            <strong>Success!</strong> Your food donation has been posted. NGOs will be notified shortly.
+                        </div>
+                    `;
+                    
+                    // Reset form
+                    document.getElementById('foodForm').reset();
+                    
+                    // Scroll to top
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    
+                    // Redirect after 3 seconds
+                    setTimeout(() => {
+                        window.location.href = '/my-donations';
+                    }, 3000);
+                } else {
+                    // Error
+                    alertBox.className = 'alert alert-error';
+                    alertBox.style.display = 'flex';
+                    alertBox.innerHTML = `
+                        <i class="fas fa-exclamation-circle" style="font-size: 1.5rem;"></i>
+                        <div>
+                            <strong>Error!</strong> ${data.message || data.error || 'Failed to post food donation. Please try again.'}
+                        </div>
+                    `;
+                    
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            } catch (error) {
+                // Network error
+                alertBox.className = 'alert alert-error';
+                alertBox.style.display = 'flex';
+                alertBox.innerHTML = `
+                    <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <strong>Network Error!</strong> Please check your connection and try again.
+                    </div>
+                `;
+                
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-heart"></i><span>Share Food Now</span>';
+            }
+        });
+
+        // Image Upload and AI Analysis Functions
+        let uploadedImage = null;
+        let aiAnalysisResult = null;
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file type and size
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+
+            if (!validTypes.includes(file.type)) {
+                showAlert('error', 'Please upload a valid image file (JPG, PNG, or WebP)');
+                return;
+            }
+
+            if (file.size > maxSize) {
+                showAlert('error', 'Image size should be less than 5MB');
+                return;
+            }
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedImage = e.target.result;
+                document.getElementById('previewImg').src = uploadedImage;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('imageUploadBox').style.display = 'none';
+                // Safety panel removed - just show preview
+                // Start AI analysis in background
+                analyzeFoodImage(uploadedImage);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            uploadedImage = null;
+            aiAnalysisResult = null;
+            document.getElementById('foodImage').value = '';
+            document.getElementById('imageUploadBox').style.display = 'block';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('aiAnalysis').style.display = 'none';
+        }
+
+        // ── Multiple images for safety prediction ─────────────────────────────
+        let safetyImages = [];
+
+        function handleMultiImageUpload(event) {
+            const files = Array.from(event.target.files);
+            if (!files.length) return;
+
+            const maxSize = 5 * 1024 * 1024;
+            const validTypes = ['image/jpeg','image/jpg','image/png','image/webp'];
+            const container = document.getElementById('multiImgPreviews');
+            const countEl   = document.getElementById('multiImgCount');
+
+            files.forEach(file => {
+                if (!validTypes.includes(file.type) || file.size > maxSize) return;
+                if (safetyImages.length >= 4) return; // max 4
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const idx = safetyImages.length;
+                    safetyImages.push(e.target.result);
+
+                    // Thumbnail
+                    const wrap = document.createElement('div');
+                    wrap.style.cssText = 'position:relative; width:72px; height:72px;';
+                    wrap.innerHTML = `
+                        <img src="${e.target.result}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid #4CAF50;">
+                        <button type="button" onclick="removeSafetyImg(${idx})"
+                            style="position:absolute;top:-6px;right:-6px;background:#c62828;color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:20px;text-align:center;">✕</button>
+                        <div id="safety-img-status-${idx}" style="position:absolute;bottom:2px;left:0;right:0;text-align:center;font-size:9px;color:white;background:rgba(0,0,0,0.5);border-radius:0 0 6px 6px;padding:1px;">Analyzing...</div>`;
+                    wrap.id = `safety-img-wrap-${idx}`;
+                    container.appendChild(wrap);
+
+                    countEl.textContent = `${safetyImages.length}/4 photos uploaded`;
+
+                    // Analyze this image
+                    analyzeSafetyImage(e.target.result, idx);
+                };
+                reader.readAsDataURL(file);
+            });
+
+            // Reset input so same files can be re-added
+            event.target.value = '';
+        }
+
+        function removeSafetyImg(idx) {
+            safetyImages[idx] = null;
+            const wrap = document.getElementById(`safety-img-wrap-${idx}`);
+            if (wrap) wrap.remove();
+            const active = safetyImages.filter(Boolean).length;
+            document.getElementById('multiImgCount').textContent =
+                active > 0 ? `${active}/4 photos uploaded` : '';
+        }
+
+        async function analyzeSafetyImage(imageData, idx) {
+            const statusEl = document.getElementById(`safety-img-status-${idx}`);
+            try {
+                const blob = await fetch(imageData).then(r => r.blob());
+                const formData = new FormData();
+                formData.append('image', blob, `safety_${idx}.jpg`);
+
+                const res  = await fetch('/api/verify-food-quality', { method: 'POST', body: formData });
+                const data = await res.json();
+
+                if (statusEl) {
+                    const q = data.quality || '';
+                    if (q === 'good' || q === 'fresh') {
+                        statusEl.textContent = '✅ Safe';
+                        statusEl.style.background = 'rgba(46,125,50,0.8)';
+                    } else if (q === 'fair' || q === 'moderate') {
+                        statusEl.textContent = '⚠️ OK';
+                        statusEl.style.background = 'rgba(230,81,0,0.8)';
+                    } else {
+                        statusEl.textContent = '❌ Unsafe';
+                        statusEl.style.background = 'rgba(198,40,40,0.8)';
+                    }
+                }
+
+                // Store result for overall scoring
+                if (!window.safetyImgResults) window.safetyImgResults = {};
+                window.safetyImgResults[idx] = data;
+
+                // Update overall safety summary
+                updateSafetyImageSummary();
+
+            } catch(e) {
+                if (statusEl) { statusEl.textContent = '⚠️ Error'; }
+            }
+        }
+
+        function updateSafetyImageSummary() {
+            const results = Object.values(window.safetyImgResults || {});
+            if (!results.length) return;
+
+            const unsafe  = results.filter(r => r.quality === 'poor' || r.quality === 'bad').length;
+            const safe    = results.filter(r => r.quality === 'good' || r.quality === 'fresh').length;
+            const total   = results.length;
+
+            let summary, color;
+            if (unsafe > 0) {
+                summary = `❌ ${unsafe}/${total} photos show spoilage — food may be unsafe`;
+                color = '#c62828';
+            } else if (safe === total) {
+                summary = `✅ All ${total} photos look safe for donation`;
+                color = '#2e7d32';
+            } else {
+                summary = `⚠️ Mixed results — inspect food carefully before donating`;
+                color = '#e65100';
+            }
+
+            let summaryEl = document.getElementById('safetyImgSummary');
+            if (!summaryEl) {
+                summaryEl = document.createElement('div');
+                summaryEl.id = 'safetyImgSummary';
+                summaryEl.style.cssText = 'margin-top:10px; padding:8px 12px; border-radius:8px; font-size:0.82rem; font-weight:600;';
+                document.getElementById('multiImgCount').after(summaryEl);
+            }
+            summaryEl.textContent = summary;
+            summaryEl.style.background = color === '#2e7d32' ? '#d4edda' : color === '#c62828' ? '#f8d7da' : '#fff3cd';
+            summaryEl.style.color = color;
+        }
+
+        async function analyzeFoodImage(imageData) {
+            const aiAnalysisDiv = document.getElementById('aiAnalysis');
+            const aiResultDiv = document.getElementById('aiResult');
+            
+            // Show loading state
+            aiAnalysisDiv.style.display = 'block';
+            aiResultDiv.innerHTML = `
+                <div class="ai-loading">
+                    <div class="spinner"></div>
+                    <p>AI is analyzing your food photo...</p>
+                    <small>Checking for safety, freshness, and quality</small>
+                </div>
+            `;
+
+            try {
+                // Use the original file directly (more reliable than base64 conversion)
+                const fileInput = document.getElementById('foodImage');
+                const file = fileInput.files[0];
+
+                // Create FormData for API
+                const formData = new FormData();
+                formData.append('image', file, file.name);
+
+                // Call AI analysis API
+                const response = await fetch('/api/verify-food-quality', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    aiAnalysisResult = result;
+                    window.aiAnalysisResult = result;  // expose for hybrid safety
+                    displayAIResult(result);
+                } else {
+                    throw new Error(result.message || 'AI analysis failed');
+                }
+
+            } catch (error) {
+                console.error('AI Analysis Error:', error);
+                aiResultDiv.innerHTML = `
+                    <div class="ai-error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>AI Analysis Failed</p>
+                        <small>${error.message}</small>
+                        <button type="button" class="retry-btn" onclick="analyzeFoodImage(uploadedImage)">
+                            <i class="fas fa-redo"></i> Retry Analysis
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function displayAIResult(result) {
+            const aiResultDiv = document.getElementById('aiResult');
+            
+            // Non-food image → special warning (only for unclear/not_food quality)
+            const isNotFood = result.quality === 'unclear' || result.quality === 'not_food' ||
+                (result.quality === 'poor' && result.confidence === 0 && result.message && result.message.toLowerCase().includes('not a food'));
+
+            if (isNotFood) {
+                aiResultDiv.innerHTML = `
+                    <div class="ai-result danger" style="text-align:center; padding:20px;">
+                        <div style="font-size:3rem; margin-bottom:10px;">🚫</div>
+                        <h4 style="color:#ef4444; margin-bottom:10px;">This is NOT a Food Image</h4>
+                        <p style="color:#666; margin-bottom:15px;">${result.message}</p>
+                        <div class="ai-rejection">
+                            <i class="fas fa-times-circle"></i> Please upload a photo of actual food
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            const qualityClass = result.quality === 'good' ? 'success' : 
+                               result.quality === 'fair' ? 'warning' : 'danger';
+            
+            const qualityIcon = result.quality === 'good' ? 'fa-check-circle' : 
+                                result.quality === 'fair' ? 'fa-exclamation-circle' : 'fa-times-circle';
+            
+            const qualityText = result.quality === 'good' ? 'Safe for Donation' : 
+                               result.quality === 'fair' ? 'Conditionally Safe' : 'Not Recommended';
+            
+            aiResultDiv.innerHTML = `
+                <div class="ai-result ${qualityClass}">
+                    <div class="ai-quality">
+                        <i class="fas ${qualityIcon}"></i>
+                        <div class="quality-info">
+                            <h5>${qualityText}</h5>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" style="width: ${result.confidence * 100}%"></div>
+                                <span>${Math.round(result.confidence * 100)}% Confidence</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ai-details">
+                        <p><strong>Analysis:</strong> ${result.message || 'Food quality assessment completed'}</p>
+                        ${result.suggestions ? `
+                            <div class="suggestions">
+                                <strong>Suggestions:</strong>
+                                <ul>
+                                    ${result.suggestions.map(s => `<li>${s}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    ${result.quality === 'good' ? 
+                        '<div class="ai-approval"><i class="fas fa-shield-alt"></i> Approved for donation</div>' :
+                        result.quality === 'fair' ?
+                        '<div class="ai-warning"><i class="fas fa-exclamation-triangle"></i> Review before donation</div>' :
+                        '<div class="ai-rejection"><i class="fas fa-times-circle"></i> Not recommended for donation</div>'
+                    }
+                </div>
+            `;
+        }
+
+        function showAlert(type, message) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.className = `alert alert-${type}`;
+            alertBox.style.display = 'flex';
+            alertBox.innerHTML = `
+                <i class="fas fa-${type === 'error' ? 'exclamation-circle' : 'info-circle'}" style="font-size: 1.5rem;"></i>
+                <div>
+                    <strong>${type === 'error' ? 'Error!' : 'Info'}</strong> ${message}
+                </div>
+            `;
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 5000);
+        }
+
+        // ── HYBRID FOOD SAFETY PREDICTION ────────────────────────────────────
+        let _predictAllowed = false;  // only allow when button clicked
+
+        function runHybridSafety() {
+            // Only run when explicitly called from Predict button
+            if (!_predictAllowed) {
+                _predictAllowed = false;
+                return;
+            }
+            _predictAllowed = false;
+
+            const foodType    = document.getElementById('safetyFoodType')?.value || '';
+            const storage     = document.getElementById('safetyStorage')?.value  || '';
+            const prepTimeStr = document.getElementById('safetyPrepTime')?.value || '';
+            const smell       = document.getElementById('safetySmell')?.value    || '';
+            const confirm_    = document.getElementById('safetyConfirm')?.value  || '';
+            const aiResult    = window.aiAnalysisResult || null;
+
+            // Validate all fields
+            if (!foodType || !storage || !prepTimeStr || !smell || !confirm_) {
+                const missing = [];
+                if (!foodType)    missing.push('Food Type');
+                if (!storage)     missing.push('Storage');
+                if (!prepTimeStr) missing.push('Prepared At');
+                if (!smell)       missing.push('Smell Status');
+                if (!confirm_)    missing.push('Confirmation');
+                alert('⚠️ Please fill all fields before predicting:\n• ' + missing.join('\n• '));
+                return;
+            }
+
+            // Show result section NOW (only after button click + validation pass)
+            document.getElementById('safetyResultSection').style.display = 'block';
+
+            // Weights: Image=40%, Time=30%, Smell=20%, Confirmation=10%
+            let imageScore   = 40;
+            let timeScore    = 30;
+            let smellScore   = 20;
+            let confirmScore = 10;
+            const factors    = [];
+
+            // ── IMAGE SCORE (40%) ──
+            if (aiResult) {
+                const q = aiResult.quality || '';
+                if (q === 'fresh' || q === 'good') {
+                    imageScore = 40;
+                    factors.push({ label: '📷 Image AI (40%)', status: 'ok',   text: 'Fresh food detected — 40/40 pts' });
+                } else if (q === 'moderate' || q === 'fair') {
+                    imageScore = 25;
+                    factors.push({ label: '📷 Image AI (40%)', status: 'warn', text: 'Moderate quality — 25/40 pts' });
+                } else if (q === 'poor' || q === 'bad' || q === 'unclear') {
+                    imageScore = 0;
+                    factors.push({ label: '📷 Image AI (40%)', status: 'bad',  text: 'Spoilage/fungus detected — 0/40 pts ❌' });
+                } else {
+                    imageScore = 28;
+                    factors.push({ label: '📷 Image AI (40%)', status: 'warn', text: 'Inconclusive — 28/40 pts' });
+                }
+            } else {
+                imageScore = 28;
+                factors.push({ label: '📷 Image AI (40%)', status: 'warn', text: 'No image uploaded — 28/40 pts (upload for accuracy)' });
+            }
+
+            // ── TIME SCORE (30%) ──
+            const limits = {
+                cooked:     { room_temperature: 4,  refrigerated: 24 },
+                dairy:      { room_temperature: 2,  refrigerated: 12 },
+                fruits:     { room_temperature: 12, refrigerated: 48 },
+                vegetables: { room_temperature: 8,  refrigerated: 36 },
+                raw:        { room_temperature: 6,  refrigerated: 24 },
+                packaged:   { room_temperature: 48, refrigerated: 96 },
+                bakery:     { room_temperature: 12, refrigerated: 48 },
+                other:      { room_temperature: 4,  refrigerated: 20 },
+            };
+            const safeHours = (limits[foodType] || limits.other)[storage] || 4;
+            const hoursOld  = Math.max(0, (new Date() - new Date(prepTimeStr)) / 3600000);
+            const ratio     = hoursOld / safeHours;
+
+            if (ratio <= 0.5) {
+                timeScore = 30;
+                factors.push({ label: '⏰ Time (30%)', status: 'ok',   text: `${hoursOld.toFixed(1)}h old, limit ${safeHours}h — 30/30 pts` });
+            } else if (ratio <= 1.0) {
+                timeScore = Math.round(30 * (1 - (ratio - 0.5)));
+                factors.push({ label: '⏰ Time (30%)', status: 'warn', text: `${hoursOld.toFixed(1)}h old, near ${safeHours}h limit — ${timeScore}/30 pts` });
+            } else {
+                timeScore = 0;
+                factors.push({ label: '⏰ Time (30%)', status: 'bad',  text: `${hoursOld.toFixed(1)}h old, EXCEEDS ${safeHours}h limit — 0/30 pts ❌` });
+            }
+
+            // ── SMELL SCORE (20%) ──
+            if (smell === 'good') {
+                smellScore = 20;
+                factors.push({ label: '👃 Smell (20%)', status: 'ok',   text: 'Good smell — 20/20 pts' });
+            } else if (smell === 'neutral') {
+                smellScore = 10;
+                factors.push({ label: '👃 Smell (20%)', status: 'warn', text: 'Neutral smell — 10/20 pts' });
+            } else {
+                smellScore = 0;
+                factors.push({ label: '👃 Smell (20%)', status: 'bad',  text: 'Bad smell detected — 0/20 pts ❌' });
+            }
+
+            // ── CONFIRMATION SCORE (10%) ──
+            if (confirm_ === 'yes') {
+                confirmScore = 10;
+                factors.push({ label: '✅ Confirmation (10%)', status: 'ok',   text: 'Donor confirmed fresh — 10/10 pts' });
+            } else {
+                confirmScore = 2;
+                factors.push({ label: '✅ Confirmation (10%)', status: 'warn', text: 'Not sure — 2/10 pts' });
+            }
+
+            const score = Math.max(0, Math.min(100, imageScore + timeScore + smellScore + confirmScore));
+
+            // ── HARD RULES (override) ──
+            const imgBad   = aiResult && (aiResult.quality === 'poor' || aiResult.quality === 'bad');
+            const smellBad = smell === 'bad';
+            const timeOver = timeScore === 0;
+
+            let verdict, badgeStyle, barColor, message;
+
+            if (imgBad || smellBad) {
+                verdict = '❌ UNSAFE';
+                barColor = '#c62828';
+                badgeStyle = 'background:#f8d7da;color:#721c24;border:2px solid #ef9a9a;';
+                message = imgBad
+                    ? 'Image shows spoilage. Food is NOT safe for donation.'
+                    : 'Bad smell detected. Food is NOT safe for donation.';
+            } else if (timeOver && confirm_ === 'not_sure') {
+                verdict = '❌ UNSAFE';
+                barColor = '#c62828';
+                badgeStyle = 'background:#f8d7da;color:#721c24;border:2px solid #ef9a9a;';
+                message = 'Time exceeded + donor not sure. Do not donate.';
+            } else if (score >= 70) {
+                verdict = '✅ SAFE';
+                barColor = '#2e7d32';
+                badgeStyle = 'background:#d4edda;color:#155724;border:2px solid #a5d6a7;';
+                message = 'Food appears safe for donation. Distribute quickly.';
+            } else if (score >= 40) {
+                verdict = '⚠️ RISKY';
+                barColor = '#f57c00';
+                badgeStyle = 'background:#fff3cd;color:#856404;border:2px solid #ffc107;';
+                message = 'Borderline safety. Inspect carefully before distributing.';
+            } else {
+                verdict = '❌ UNSAFE';
+                barColor = '#c62828';
+                badgeStyle = 'background:#f8d7da;color:#721c24;border:2px solid #ef9a9a;';
+                message = 'Safety score too low. Not recommended for donation.';
+            }
+
+            // Update UI
+            const scoreEl   = document.getElementById('safetyScoreText');
+            const barEl     = document.getElementById('safetyScoreBar');
+            const badgeEl   = document.getElementById('safetyBadge');
+            const msgEl     = document.getElementById('safetyMessage');
+            const factorsEl = document.getElementById('safetyFactors');
+
+            if (scoreEl) { scoreEl.textContent = score + '%'; scoreEl.style.color = barColor; }
+            if (barEl)   { barEl.style.width = score + '%'; barEl.style.background = barColor; }
+            if (badgeEl) { badgeEl.textContent = verdict; badgeEl.style.cssText = `padding:10px 28px;border-radius:25px;font-size:1.1rem;font-weight:900;letter-spacing:0.5px;${badgeStyle}`; }
+            if (msgEl)   { msgEl.textContent = message; }
+
+            // ── Block submit if UNSAFE ──
+            const submitBtn = document.getElementById('submitBtn');
+            if (verdict.includes('UNSAFE')) {
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.style.background = 'rgba(244,67,54,0.3)';
+                    submitBtn.style.border = '1px solid rgba(244,67,54,0.5)';
+                    submitBtn.style.color = '#ef9a9a';
+                    submitBtn.innerHTML = '🚫 Cannot Donate — Food Unsafe for People';
+                }
+                // Show big warning
+                let warnEl = document.getElementById('unsafe-warning');
+                if (!warnEl) {
+                    warnEl = document.createElement('div');
+                    warnEl.id = 'unsafe-warning';
+                    document.getElementById('safetyResultSection').appendChild(warnEl);
+                }
+                warnEl.style.cssText = 'background:rgba(244,67,54,0.15);border:2px solid rgba(244,67,54,0.5);border-radius:12px;padding:16px 20px;margin-top:16px;text-align:center;';
+                warnEl.innerHTML = `<div style="font-size:1.5rem;margin-bottom:8px;">🚫</div>
+                    <div style="color:#ef9a9a;font-weight:800;font-size:1rem;">Cannot Donate — Unsafe for Humans/People</div>
+                    <div style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-top:6px;">${message}</div>`;
+            } else {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.style.background = '';
+                    submitBtn.style.border = '';
+                    submitBtn.style.color = '';
+                    submitBtn.innerHTML = '<i class="fas fa-share-alt"></i> Share Food Now';
+                }
+                const warnEl = document.getElementById('unsafe-warning');
+                if (warnEl) warnEl.remove();
+            }
+
+            const colMap = { ok: ['#d4edda','#155724'], warn: ['#fff3cd','#856404'], bad: ['#f8d7da','#721c24'] };
+            if (factorsEl) {
+                factorsEl.innerHTML = factors.map(f => {
+                    const [bg, col] = colMap[f.status] || ['#f5f5f5','#333'];
+                    return `<div style="background:${bg};color:${col};padding:8px 12px;border-radius:8px;font-size:0.78rem;line-height:1.5;">
+                        <strong>${f.label}</strong><br>${f.text}
+                    </div>`;
+                }).join('');
+            }
+
+            window.hybridSafetyScore   = score;
+            window.hybridSafetyVerdict = verdict;
+        }
+
+        // Dynamic Food Expiry Prediction System
+        async function updateExpiryPrediction() {
+            const foodType = document.getElementById('foodType').value;
+            const containerType = document.getElementById('containerType').value;
+            const storageCondition = document.getElementById('storageCondition').value;
+            const preparationTime = document.getElementById('preparationTime').value;
+            const currentTemperature = document.getElementById('currentTemperature').value;
+            const predictionBox = document.getElementById('expiryPredictionBox');
+            const predictionDetails = document.getElementById('predictionDetails');
+
+            if (!foodType || !containerType || !storageCondition || !preparationTime) {
+                predictionBox.style.display = 'none';
+                return;
+            }
+
+            predictionBox.style.display = 'block';
+            predictionDetails.innerHTML = '<div style="text-align:center; color:#10b981;"><i class="fas fa-spinner fa-spin"></i> Calculating...</div>';
+
+            try {
+                const response = await fetch('/api/food/predict-expiry', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        food_type: foodType,
+                        container_type: containerType,
+                        storage_condition: storageCondition,
+                        preparation_time: new Date(preparationTime).toISOString(),
+                        current_temperature: currentTemperature ? parseFloat(currentTemperature) : null
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    const expiry = new Date(data.predicted_expiry);
+                    const hours = data.safe_hours;
+
+                    // Auto-fill expiry time field
+                    const localExpiry = new Date(expiry.getTime() - expiry.getTimezoneOffset() * 60000);
+                    document.getElementById('expiryTime').value = localExpiry.toISOString().slice(0, 16);
+
+                    // Determine safety status color
+                    let statusColor, statusIcon, statusText, statusBg;
+                    if (hours >= 6) {
+                        statusColor = '#10b981'; statusIcon = '🟢'; statusText = 'Safe for Humans'; statusBg = 'rgba(16,185,129,0.15)';
+                    } else if (hours >= 2) {
+                        statusColor = '#f59e0b'; statusIcon = '🟡'; statusText = 'Safe for Animals'; statusBg = 'rgba(245,158,11,0.15)';
+                    } else {
+                        statusColor = '#ef4444'; statusIcon = '🔴'; statusText = 'Expiring Soon'; statusBg = 'rgba(239,68,68,0.15)';
+                    }
+
+                    predictionDetails.innerHTML = `
+                        <div style="background:${statusBg}; border-radius:10px; padding:15px;">
+                            <div style="font-size:1.3rem; font-weight:700; color:${statusColor}; margin-bottom:10px;">
+                                ${statusIcon} ${statusText}
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:0.9rem;">
+                                <div><strong>⏰ Safe For:</strong> ${hours} hours</div>
+                                <div><strong>📦 Container:</strong> ${containerType}</div>
+                                <div><strong>❄️ Storage:</strong> ${storageCondition === 'refrigerated' ? 'Refrigerated' : 'Room Temp'}</div>
+                                <div><strong>🌡️ Temperature:</strong> ${currentTemperature ? currentTemperature + '°C' : 'Not specified'}</div>
+                            </div>
+                            <div style="margin-top:10px; padding:10px; background:rgba(255,255,255,0.5); border-radius:8px;">
+                                <strong>🔮 Predicted Expiry:</strong> ${expiry.toLocaleString()}
+                            </div>
+                            <div style="margin-top:8px; font-size:0.8rem; color:#666;">
+                                ✅ Expiry time auto-filled below. You can adjust if needed.
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                predictionDetails.innerHTML = '<div style="color:#ef4444;">⚠️ Prediction failed. Please set expiry manually.</div>';
+            }
+        }
+
+        // Trigger prediction when food type changes too
+        document.getElementById('foodType').addEventListener('change', updateExpiryPrediction);
+
+        // Update safety prediction when expiry time changes
+        document.getElementById('expiryTime').addEventListener('change', updateExpiryPrediction);
+
+        // Auto-hide alert after 5 seconds
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.target.style.display === 'flex') {
+                    setTimeout(() => {
+                        mutation.target.style.display = 'none';
+                    }, 5000);
+                }
+            });
+        });
+
+        observer.observe(document.getElementById('alertBox'), {
+            attributes: true,
+            attributeFilter: ['style']
+        });
+    </script>
+
+    <script>
+        // Full page background image rotation
+        let bgIndex = 0;
+        const bgImages = document.querySelectorAll('.page-bg');
+        
+        setInterval(() => {
+            bgImages[bgIndex].classList.remove('active');
+            bgIndex = (bgIndex + 1) % bgImages.length;
+            bgImages[bgIndex].classList.add('active');
+        }, 5000); // Change every 5 seconds
+    </script>
+
+
+
+    <!-- Language Switcher -->
+    </body>
+</html>

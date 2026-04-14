@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodShare - Share Food Save Lives</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; position: relative; min-height: 100vh; }
+
+        /* Google Translate custom style */
+        #google_translate_element { display:inline-block; }
+        .goog-te-gadget { font-size:0 !important; }
+        .goog-te-gadget select {
+            background: rgba(255,255,255,0.12) !important;
+            border: 1px solid rgba(255,255,255,0.25) !important;
+            border-radius: 8px !important;
+            color: #d8b4fe !important;
+            padding: 5px 10px !important;
+            font-size: 0.85rem !important;
+            cursor: pointer !important;
+        }
+        .goog-te-banner-frame { display:none !important; }
+        body { top: 0 !important; }
+
+        /* ── Background ── */
+        .page-bg-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; }
+        .page-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-size: cover; background-position: center;
+            opacity: 0; transition: opacity 2.5s ease-in-out;
+            filter: blur(2px) brightness(0.6);
+        }
+        .page-bg.active { opacity: 1; }
+        .page-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.6) 100%);
+        }
+
+        /* ── Navbar ── */
+        nav {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding: 14px 50px;
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .logo { color: white; font-size: 1.4rem; font-weight: 800; display: flex; align-items: center; gap: 12px; letter-spacing: 1px; }
+        .logo-icon {
+            width: 44px; height: 44px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 22px; box-shadow: 0 4px 15px rgba(255,200,0,0.5); border: 2px solid rgba(255,255,255,0.4);
+        }
+        .nav-menu { display: flex; gap: 22px; list-style: none; flex-wrap: wrap; }
+        .nav-menu a {
+            text-decoration: none; font-size: 1rem; font-weight: 700;
+            color: #d8b4fe !important; letter-spacing: 0.3px;
+            transition: all 0.25s ease; position: relative; padding-bottom: 3px;
+        }
+        .nav-menu a::after {
+            content: ''; position: absolute; bottom: 0; left: 0;
+            width: 0; height: 2px; background: #d8b4fe;
+            transition: width 0.3s ease; border-radius: 2px;
+        }
+        .nav-menu a:hover::after { width: 100%; }
+        .nav-menu a:hover { transform: translateY(-2px); color: #f3e8ff !important; }
+
+        /* ── Hero ── */
+        .hero {
+            min-height: 92vh;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; color: white; padding: 60px 20px;
+            position: relative;
+        }
+        .hero-content { max-width: 800px; }
+        .hero-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: #fde68a; font-size: 0.85rem; font-weight: 700;
+            padding: 6px 20px; border-radius: 50px; margin-bottom: 24px;
+            letter-spacing: 1.5px; text-transform: uppercase;
+        }
+        .hero h1 {
+            font-size: 4.2rem; font-weight: 900; line-height: 1.1;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            background: linear-gradient(135deg, #ffffff 0%, #d8b4fe 50%, #86efac 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .hero p {
+            font-size: 1.2rem; color: rgba(255,255,255,0.85);
+            margin-bottom: 10px; font-weight: 400; line-height: 1.6;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+        .hero-buttons { margin-top: 35px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            padding: 15px 38px; font-size: 1rem; font-weight: 700;
+            border-radius: 50px; text-decoration: none; display: inline-block;
+            cursor: pointer; transition: all 0.3s ease; letter-spacing: 0.5px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4ade80, #16a34a);
+            color: white; border: none;
+            box-shadow: 0 6px 25px rgba(74,222,128,0.4);
+        }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 35px rgba(74,222,128,0.5); }
+        .btn-glass {
+            background: rgba(255,255,255,0.12);
+            color: white; border: 1.5px solid rgba(255,255,255,0.4);
+            backdrop-filter: blur(10px);
+        }
+        .btn-glass:hover { background: rgba(255,255,255,0.22); transform: translateY(-3px); border-color: white; }
+
+        /* ── Stats Bar ── */
+        .stats-bar {
+            display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;
+            padding: 30px 20px;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .stat-item { text-align: center; color: white; }
+        .stat-item .num { font-size: 2.2rem; font-weight: 900; color: #4ade80; line-height: 1; }
+        .stat-item .label { font-size: 0.8rem; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+        /* ── Section Base ── */
+        .section { padding: 80px 20px; }
+        .section-title {
+            text-align: center; font-size: 2.4rem; font-weight: 800;
+            color: white; margin-bottom: 12px;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+        }
+        .section-sub {
+            text-align: center; color: rgba(255,255,255,0.65);
+            font-size: 1rem; margin-bottom: 50px;
+        }
+
+        /* ── How It Works ── */
+        .how-section { padding: 80px 20px; background: rgba(0,0,0,0.2); }
+        .steps-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; }
+        .step-card {
+            background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px; padding: 30px 20px; text-align: center;
+            transition: all 0.3s; color: white;
+        }
+        .step-card:hover { transform: translateY(-6px); background: rgba(255,255,255,0.13); border-color: rgba(216,180,254,0.4); }
+        .step-num { font-size: 2.5rem; margin-bottom: 12px; }
+        .step-card h4 { font-size: 1rem; font-weight: 700; color: #d8b4fe; }
+
+        /* ── Features ── */
+        .features-section { padding: 80px 20px; }
+        .features-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+        .feature-card {
+            background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px; padding: 32px 24px; text-align: center;
+            transition: all 0.3s; color: white;
+        }
+        .feature-card:hover { transform: translateY(-6px); background: rgba(255,255,255,0.13); border-color: rgba(134,239,172,0.4); box-shadow: 0 16px 40px rgba(0,0,0,0.3); }
+        .feature-icon { font-size: 2.8rem; margin-bottom: 16px; }
+        .feature-card h3 { font-size: 1.1rem; font-weight: 700; color: #86efac; margin-bottom: 10px; }
+        .feature-card p { color: rgba(255,255,255,0.65); font-size: 0.9rem; line-height: 1.6; }
+
+        /* ── Mission ── */
+        .mission-section {
+            padding: 80px 20px;
+            background: rgba(0,0,0,0.25);
+            text-align: center;
+        }
+        .mission-section p {
+            font-size: 1.1rem; color: rgba(255,255,255,0.8);
+            max-width: 720px; margin: 0 auto 14px; line-height: 1.7;
+        }
+
+        /* ── CTA ── */
+        .cta-section {
+            padding: 80px 20px; text-align: center;
+            background: rgba(0,0,0,0.15);
+        }
+        .cta-box {
+            max-width: 650px; margin: 0 auto;
+            background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 28px; padding: 50px 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+        .cta-box h2 { font-size: 2rem; color: white; font-weight: 800; margin-bottom: 14px; }
+        .cta-box p { color: rgba(255,255,255,0.7); margin-bottom: 28px; font-size: 1rem; }
+        .cta-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+        /* ── Footer ── */
+        footer {
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            color: white; padding: 50px 20px 24px;
+        }
+        .footer-content { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 30px; }
+        .footer-section h3 { font-size: 1.1rem; margin-bottom: 14px; color: #d8b4fe; }
+        .footer-section p { color: rgba(255,255,255,0.6); font-size: 0.9rem; line-height: 1.6; }
+        .footer-section ul { list-style: none; }
+        .footer-section ul li { margin-bottom: 8px; }
+        .footer-section ul li a { color: rgba(255,255,255,0.6); text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+        .footer-section ul li a:hover { color: #d8b4fe; }
+        .footer-bottom { text-align: center; margin-top: 36px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.85rem; color: rgba(255,255,255,0.4); }
+
+        /* ── District section ── */
+        .district-section { padding: 50px 20px; background: rgba(0,0,0,0.25); }
+        .district-section h2 { font-size: 2.2rem; text-align: center; margin-bottom: 8px; color: #fff; font-weight: 800; }
+        .district-subtitle { text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 28px; font-size: 1rem; }
+        .district-inner { max-width: 1100px; margin: 0 auto; }
+        .district-stats-bar { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-bottom: 18px; }
+        .dst-stat { background: rgba(255,255,255,0.1); color: white; padding: 8px 18px; border-radius: 20px; font-size: 0.88rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.2); }
+        #districtHomeMap { width: 100%; height: 400px; border-radius: 16px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); margin-bottom: 24px; }
+        .district-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+        .dst-card { background: rgba(255,255,255,0.08); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 16px; transition: transform 0.2s; color: white; }
+        .dst-card:hover { transform: translateY(-3px); }
+        .dst-card h4 { font-size: 1rem; color: #d8b4fe; margin-bottom: 8px; }
+        .dst-card p { font-size: 0.82rem; color: rgba(255,255,255,0.7); margin: 4px 0; }
+        .dst-card .dst-timer { font-weight: 700; font-size: 0.88rem; margin: 6px 0; }
+        .dst-route-btn { display: block; text-align: center; background: rgba(106,27,154,0.6); backdrop-filter: blur(8px); border: 1px solid rgba(216,180,254,0.3); color: white; padding: 8px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.82rem; margin-top: 10px; transition: all 0.2s; }
+        .dst-route-btn:hover { background: rgba(106,27,154,0.85); }
+        .dst-load-btn { display: block; margin: 0 auto 24px; padding: 12px 32px; background: rgba(106,27,154,0.5); backdrop-filter: blur(8px); border: 1px solid rgba(216,180,254,0.3); color: white; border-radius: 25px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+        .dst-load-btn:hover { transform: translateY(-2px); background: rgba(106,27,154,0.75); }
+        .dst-spinner { display: none; text-align: center; color: white; padding: 20px; font-size: 1rem; }
+        .dst-taluka-header { grid-column: 1/-1; background: rgba(106,27,154,0.5); backdrop-filter: blur(8px); border: 1px solid rgba(216,180,254,0.2); color: white; padding: 10px 16px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+    </style>
+</head>
+<body>
+    <div class="page-bg-container">
+        <div class="page-bg active" style="background-image: url('https://images.unsplash.com/photo-1593113598332-cd288d649433?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1593113646773-028c64a8f1b8?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1509099863731-ef4bff19e808?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1532629345422-7515f3d16bb6?w=1920&q=90');"></div>
+        <div class="page-bg" style="background-image: url('https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?w=1920&q=90');"></div>
+        <div class="page-overlay"></div>
+    </div>
+
+    <nav>
+        <div class="logo">
+            <div class="logo-icon">🍽️</div>
+            <span>FoodShare</span>
+        </div>
+        <ul class="nav-menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/add-food">🍽️ Donate Food</a></li>
+            <li><a href="/test-ngo">🤝 Request Food</a></li>
+            <li><a href="/find-food">🔍 Find Food</a></li>
+            <li><a href="/district-food">🌍 Food in District</a></li>
+            <li><a href="/ngo-contacts-admin">📱 NGO Contacts</a></li>
+            <li><a href="/my-donations">📋 My Donations</a></li>
+            <li><a href="#about">About</a></li>
+        </ul>
+        <div id="google_translate_element"></div>
+        <div style="display:flex; gap:6px; align-items:center;">
+            <div style="position:relative;">
+                <button onclick="toggleNotifPanel()" id="notif-bell"
+                    style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
+                    🔔
+                </button>
+                <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ef4444;color:white;border-radius:50%;width:18px;height:18px;font-size:0.65rem;font-weight:900;align-items:center;justify-content:center;">0</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Notification Panel -->
+    <div id="notif-panel" style="display:none;position:fixed;top:64px;right:16px;width:360px;max-height:500px;overflow-y:auto;background:rgba(10,10,20,0.95);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.15);border-radius:16px;box-shadow:0 16px 50px rgba(0,0,0,0.6);z-index:9999;">
+        <div style="padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:#fff;font-weight:700;font-size:1rem;">🔔 Notifications</span>
+            <button onclick="toggleNotifPanel()" style="background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer;font-size:1.1rem;">✕</button>
+        </div>
+        <div id="notif-list" style="padding:12px;">
+            <div style="text-align:center;color:rgba(255,255,255,0.4);padding:30px 0;">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">🌟 Solapur District Food Network</div>
+            <h1>Share Food,<br>Save Lives</h1>
+            <p>Connect surplus food with people who need it most.</p>
+            <p>Together we can end hunger and stop food waste.</p>
+            <div class="hero-buttons">
+                <a href="/add-food" class="btn btn-primary">🍽️ Donate Food</a>
+                <a href="/test-ngo" class="btn btn-glass">🤝 Request Food</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stat-item"><div class="num">11</div><div class="label">Talukas Covered</div></div>
+        <div class="stat-item"><div class="num">500+</div><div class="label">Meals Shared</div></div>
+        <div class="stat-item"><div class="num">50+</div><div class="label">Active Donors</div></div>
+        <div class="stat-item"><div class="num">0</div><div class="label">Food Wasted</div></div>
+    </div>
+
+    <!-- How It Works -->
+    <section class="how-section">
+        <h2 class="section-title">How It Works</h2>
+        <p class="section-sub">Simple steps to share or receive food</p>
+        <div class="steps-grid">
+            <div class="step-card"><div class="step-num">1️⃣</div><h4>Donor Registers</h4></div>
+            <div class="step-card"><div class="step-num">2️⃣</div><h4>Add Food Details</h4></div>
+            <div class="step-card"><div class="step-num">3️⃣</div><h4>Food Matching</h4></div>
+            <div class="step-card"><div class="step-num">4️⃣</div><h4>Food Pickup</h4></div>
+            <div class="step-card"><div class="step-num">5️⃣</div><h4>Confirmation</h4></div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features-section">
+        <h2 class="section-title">Our Features</h2>
+        <p class="section-sub">Everything you need to share food efficiently</p>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">⏱️</div>
+                <h3>Real-time Tracking</h3>
+                <p>Track your donations and claims in real-time with live status updates.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3>Auto Expiry Management</h3>
+                <p>Expired food automatically removed from listings to ensure freshness.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🗺️</div>
+                <h3>Full District Coverage</h3>
+                <p>Serving all 11 talukas of Solapur District with seamless connectivity.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔔</div>
+                <h3>Instant Notifications</h3>
+                <p>Get notified immediately when food is available or claimed in your area.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Easy Dashboard</h3>
+                <p>Simple dashboards to manage donations and claims efficiently.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mission / About -->
+    <section id="about" class="mission-section">
+        <h2 class="section-title">About FoodShare</h2>
+        <p class="section-sub" style="margin-bottom: 24px;">Our mission & vision</p>
+        <p>FoodShare is a platform dedicated to reducing food waste and fighting hunger in Solapur District.</p>
+        <p>We connect food donors — restaurants, hotels, and individuals — with NGOs and volunteers who distribute food to those in need.</p>
+        <p>Our goal is to ensure no food goes to waste while helping feed hungry people across all 11 talukas of Solapur.</p>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <div class="cta-box">
+            <h2>Ready to Make a Difference?</h2>
+            <p>Join hundreds of donors and volunteers helping fight hunger in Solapur District.</p>
+            <div class="cta-btns">
+                <a href="/add-food" class="btn btn-primary">🍽️ Donate Food Now</a>
+                <a href="/find-food" class="btn btn-glass">🔍 Find Food Near You</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>🍽️ FoodShare</h3>
+                <p>Connecting food donors with those in need across Solapur District. Share Food, Save Lives.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/add-food">Donate Food</a></li>
+                    <li><a href="/test-ngo">Request Food</a></li>
+                    <li><a href="/find-food">Find Food</a></li>
+                    <li><a href="/my-donations">My Donations</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Coverage Area</h3>
+                <ul>
+                    <li>Solapur City</li>
+                    <li>Pandharpur</li>
+                    <li>Barshi</li>
+                    <li>Akkalkot</li>
+                    <li>+ 7 more talukas</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 FoodShare Solapur. All rights reserved. &nbsp;|&nbsp; Made with ❤️ for Solapur District</p>
+        </div>
+    </footer>
+
+    <script>
+        // Clear any saved language - English only
+        localStorage.removeItem('fs_lang');
+        localStorage.removeItem('foodshare_lang');
+
+        let bgIndex = 0;
+        const bgImages = document.querySelectorAll('.page-bg');
+        setInterval(() => {
+            bgImages[bgIndex].classList.remove('active');
+            bgIndex = (bgIndex + 1) % bgImages.length;
+            bgImages[bgIndex].classList.add('active');
+        }, 5000);
+
+        // ── Notifications ──
+        let notifOpen = false;
+
+        async function loadNotifications() {
+            try {
+                const res = await fetch('/api/food/all-available');
+                const data = await res.json();
+                const foods = data.foods || [];
+
+                const badge = document.getElementById('notif-badge');
+                const list = document.getElementById('notif-list');
+
+                if (foods.length > 0) {
+                    badge.style.display = 'flex';
+                    badge.textContent = foods.length > 9 ? '9+' : foods.length;
+                }
+
+                if (foods.length === 0) {
+                    list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.4);padding:30px 0;">No food available right now</div>';
+                    return;
+                }
+
+                list.innerHTML = foods.map(food => {
+                    const expiry = new Date(food.expiry_time);
+                    const hoursLeft = (expiry - new Date()) / 3600000;
+                    const color = hoursLeft > 6 ? '#4ade80' : hoursLeft > 2 ? '#ffd54f' : '#ef9a9a';
+                    const timeStr = hoursLeft > 0
+                        ? `${Math.floor(hoursLeft)}h ${Math.floor((hoursLeft%1)*60)}m left`
+                        : 'Expiring soon';
+
+                    return `
+                    <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all 0.2s;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                        onmouseout="this.style.background='rgba(255,255,255,0.06)'"
+                        onclick="window.location.href='/district-food'">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+                            <span style="color:#fff;font-weight:700;font-size:0.9rem;">🍽️ ${food.title}</span>
+                            <span style="color:${color};font-size:0.75rem;font-weight:700;white-space:nowrap;margin-left:8px;">⏱️ ${timeStr}</span>
+                        </div>
+                        <div style="color:rgba(255,255,255,0.6);font-size:0.8rem;line-height:1.5;">
+                            📦 ${food.quantity} &nbsp;|&nbsp; 📍 ${food.area || food.taluka || 'N/A'}<br>
+                            📞 ${food.contact_person_name || 'N/A'} - ${food.contact_person_phone || 'N/A'}
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch(e) {
+                document.getElementById('notif-list').innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.4);padding:20px;">Could not load notifications</div>';
+            }
+        }
+
+        function toggleNotifPanel() {
+            const panel = document.getElementById('notif-panel');
+            notifOpen = !notifOpen;
+            panel.style.display = notifOpen ? 'block' : 'none';
+            if (notifOpen) loadNotifications();
+        }
+
+        // Close panel on outside click
+        document.addEventListener('click', (e) => {
+            if (notifOpen && !e.target.closest('#notif-panel') && !e.target.closest('#notif-bell')) {
+                document.getElementById('notif-panel').style.display = 'none';
+                notifOpen = false;
+            }
+        });
+
+        // Load badge count on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const res = await fetch('/api/food/all-available');
+                const data = await res.json();
+                const count = (data.foods || []).length;
+                if (count > 0) {
+                    const badge = document.getElementById('notif-badge');
+                    badge.style.display = 'flex';
+                    badge.textContent = count > 9 ? '9+' : count;
+                }
+            } catch(e) {}
+        });
+        const translations = {
+            en: {
+                nav_home: 'Home', nav_donate: '🍽️ Donate Food', nav_request: '🤝 Request Food',
+                nav_find: '🔍 Find Food', nav_district: '🌍 Food in District',
+                nav_ngo: '📱 NGO Contacts', nav_donations: '📋 My Donations', nav_about: 'About',
+                hero_badge: '🌟 Solapur District Food Network',
+                hero_h1: 'Share Food,<br>Save Lives',
+                hero_p1: 'Connect surplus food with people who need it most.',
+                hero_p2: 'Together we can end hunger and stop food waste.',
+                btn_donate: '🍽️ Donate Food', btn_request: '🤝 Request Food',
+                stat_talukas: 'Talukas Covered', stat_meals: 'Meals Shared',
+                stat_donors: 'Active Donors', stat_waste: 'Food Wasted',
+                how_title: 'How It Works', how_sub: 'Simple steps to share or receive food',
+                step1: 'Donor Registers', step2: 'Add Food Details', step3: 'Food Matching', step4: 'Food Pickup', step5: 'Confirmation',
+                feat_title: 'Our Features', feat_sub: 'Everything you need to share food efficiently',
+                about_title: 'About FoodShare', about_sub: 'Our mission & vision',
+                cta_h2: 'Ready to Make a Difference?', cta_p: 'Join hundreds of donors and volunteers helping fight hunger in Solapur District.',
+                btn_donate_now: '🍽️ Donate Food Now', btn_find: '🔍 Find Food Near You'
+            },
+            hi: {
+                nav_home: 'होम', nav_donate: '🍽️ भोजन दान करें', nav_request: '🤝 भोजन मांगें',
+                nav_find: '🔍 भोजन खोजें', nav_district: '🌍 जिले में भोजन',
+                nav_ngo: '📱 NGO संपर्क', nav_donations: '📋 मेरे दान', nav_about: 'हमारे बारे में',
+                hero_badge: '🌟 सोलापुर जिला फूड नेटवर्क',
+                hero_h1: 'भोजन साझा करें,<br>जीवन बचाएं',
+                hero_p1: 'अतिरिक्त भोजन को जरूरतमंद लोगों से जोड़ें।',
+                hero_p2: 'मिलकर भूख और खाद्य बर्बादी को रोकें।',
+                btn_donate: '🍽️ भोजन दान करें', btn_request: '🤝 भोजन मांगें',
+                stat_talukas: 'तालुके', stat_meals: 'भोजन साझा', stat_donors: 'सक्रिय दाता', stat_waste: 'बर्बाद भोजन',
+                how_title: 'यह कैसे काम करता है', how_sub: 'भोजन साझा करने के सरल चरण',
+                step1: 'दाता पंजीकरण', step2: 'भोजन विवरण', step3: 'मिलान', step4: 'पिकअप', step5: 'पुष्टि',
+                feat_title: 'हमारी सुविधाएं', feat_sub: 'भोजन साझा करने के लिए सब कुछ',
+                about_title: 'FoodShare के बारे में', about_sub: 'हमारा मिशन',
+                cta_h2: 'बदलाव लाने के लिए तैयार हैं?', cta_p: 'सोलापुर में भूख से लड़ने में मदद करें।',
+                btn_donate_now: '🍽️ अभी दान करें', btn_find: '🔍 पास में भोजन खोजें'
+            },
+            mr: {
+                nav_home: 'मुख्यपृष्ठ', nav_donate: '🍽️ अन्न दान करा', nav_request: '🤝 अन्न मागणी',
+                nav_find: '🔍 अन्न शोधा', nav_district: '🌍 जिल्ह्यातील अन्न',
+                nav_ngo: '📱 NGO संपर्क', nav_donations: '📋 माझे दान', nav_about: 'आमच्याबद्दल',
+                hero_badge: '🌟 सोलापूर जिल्हा फूड नेटवर्क',
+                hero_h1: 'अन्न वाटा,<br>जीव वाचवा',
+                hero_p1: 'अतिरिक्त अन्न गरजू लोकांपर्यंत पोहोचवा।',
+                hero_p2: 'एकत्र येऊन भूक आणि अन्न नासाडी थांबवूया।',
+                btn_donate: '🍽️ अन्न दान करा', btn_request: '🤝 अन्न मागणी',
+                stat_talukas: 'तालुके', stat_meals: 'जेवण वाटप', stat_donors: 'सक्रिय दाते', stat_waste: 'वाया गेलेले अन्न',
+                how_title: 'हे कसे काम करते', how_sub: 'अन्न वाटण्याचे सोपे टप्पे',
+                step1: 'दाता नोंदणी', step2: 'अन्न तपशील', step3: 'जुळवणी', step4: 'पिकअप', step5: 'पुष्टी',
+                feat_title: 'आमची वैशिष्ट्ये', feat_sub: 'अन्न वाटण्यासाठी सर्व काही',
+                about_title: 'FoodShare बद्दल', about_sub: 'आमचे ध्येय',
+                cta_h2: 'बदल घडवायला तयार आहात?', cta_p: 'सोलापूरमध्ये भूकेशी लढण्यास मदत करा।',
+                btn_donate_now: '🍽️ आत्ता दान करा', btn_find: '🔍 जवळचे अन्न शोधा'
+            }
+        };
+
+        function setLang(lang) {
+            const t = translations[lang];
+            // Nav
+            document.querySelectorAll('.nav-menu li a').forEach((a, i) => {
+                const keys = ['nav_home','nav_donate','nav_request','nav_find','nav_district','nav_ngo','nav_donations','nav_about'];
+                if (t[keys[i]]) a.textContent = t[keys[i]];
+            });
+            // Hero
+            const badge = document.querySelector('.hero-badge');
+            if (badge) badge.textContent = t.hero_badge;
+            const h1 = document.querySelector('.hero h1');
+            if (h1) h1.innerHTML = t.hero_h1;
+            const ps = document.querySelectorAll('.hero p');
+            if (ps[0]) ps[0].textContent = t.hero_p1;
+            if (ps[1]) ps[1].textContent = t.hero_p2;
+            // Buttons
+            const btns = document.querySelectorAll('.hero-buttons .btn');
+            if (btns[0]) btns[0].textContent = t.btn_donate;
+            if (btns[1]) btns[1].textContent = t.btn_request;
+            // Stats
+            const statLbls = document.querySelectorAll('.stat-item .label');
+            const statKeys = ['stat_talukas','stat_meals','stat_donors','stat_waste'];
+            statLbls.forEach((el,i) => { if(t[statKeys[i]]) el.textContent = t[statKeys[i]]; });
+            // Sections
+            const secTitles = document.querySelectorAll('.section-title');
+            if (secTitles[0]) secTitles[0].textContent = t.how_title;
+            if (secTitles[1]) secTitles[1].textContent = t.feat_title;
+            if (secTitles[2]) secTitles[2].textContent = t.about_title;
+            const secSubs = document.querySelectorAll('.section-sub');
+            if (secSubs[0]) secSubs[0].textContent = t.how_sub;
+            if (secSubs[1]) secSubs[1].textContent = t.feat_sub;
+            if (secSubs[2]) secSubs[2].textContent = t.about_sub;
+            // Steps
+            const steps = document.querySelectorAll('.step-card h4');
+            ['step1','step2','step3','step4','step5'].forEach((k,i) => { if(steps[i]) steps[i].textContent = t[k]; });
+            // CTA
+            const ctaH2 = document.querySelector('.cta-box h2');
+            const ctaP = document.querySelector('.cta-box p');
+            if (ctaH2) ctaH2.textContent = t.cta_h2;
+            if (ctaP) ctaP.textContent = t.cta_p;
+            const ctaBtns = document.querySelectorAll('.cta-btns .btn');
+            if (ctaBtns[0]) ctaBtns[0].textContent = t.btn_donate_now;
+            if (ctaBtns[1]) ctaBtns[1].textContent = t.btn_find;
+            // Active button style
+            ['en','hi','mr'].forEach(l => {
+                const b = document.getElementById('btn-'+l);
+                if (b) b.style.background = l===lang ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.08)';
+            });
+            localStorage.setItem('lang', lang);
+        }
+
+        // Auto-apply saved language
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('lang') || 'en';
+            setLang(saved);
+        });
+    </script>
+</body>
+</html>
